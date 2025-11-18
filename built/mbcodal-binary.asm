@@ -1,9 +1,9 @@
 ; Interface tables: 0/0 (NaN%)
 ; Virtual methods: 0 / 0
-; generated code sizes (bytes): 7372 (incl. 4884 user, 942 helpers, 14 vtables, 1532 lits); src size 0
-; assembly: 4306 lines; density: 45.22 bytes/stmt; (108 stmts)
-; total bytes: 298188 (63.3% of 460.0k flash with 172852 free)
-; peep hole pass: 63 instructions removed and 143 updated
+; generated code sizes (bytes): 7396 (incl. 4972 user, 942 helpers, 14 vtables, 1468 lits); src size 0
+; assembly: 4346 lines; density: 45.2 bytes/stmt; (110 stmts)
+; total bytes: 298212 (63.3% of 460.0k flash with 172828 free)
+; peep hole pass: 75 instructions removed and 149 updated
 ; peep hole pass: 12 instructions removed and 0 updated
 ; peep hole pass: 0 instructions removed and 0 updated
 
@@ -22,7 +22,7 @@
     .word _pxt_lambda_trampoline@fn
     .word _pxt_perf_counters
     .word _pxt_restore_exception_state@fn
-    .word _str51 ; name
+    .word _str47 ; name
     ;
 ; Function main.ts(1,1): <main>
     ;
@@ -134,7 +134,7 @@ _main___P3055_locals:
     add sp, #4*1 ; pop locals 1
     @stackempty locals
     bl nfc_driver_testing__P3054
-_proccall52:
+_proccall48:
     @stackempty locals
 .ret.3055:
     @stackempty locals
@@ -146,9 +146,9 @@ _main___P3055_end:
     @stackempty args
 ; endfun
     ;
-; Function main.ts(24,3): nfc_driver.testing
+; Function main.ts(25,3): nfc_driver.testing
     ;
-    .object nfc_driver_testing__P3054 "main.ts(24,3): nfc_driver.testing"
+    .object nfc_driver_testing__P3054 "main.ts(25,3): nfc_driver.testing"
 nfc_driver_testing__P3054_pre:
     .section code
     .balign 4
@@ -169,8 +169,29 @@ nfc_driver_testing__P3054_nochk:
     push {r0} ;loc
     push {r0} ;loc
     push {r0} ;loc
+    push {r0} ;loc
+    push {r0} ;loc
+    push {r0} ;loc
+    push {r0} ;loc
+    push {r0} ;loc
+    push {r0} ;loc
+    push {r0} ;loc
     @stackmark locals
 nfc_driver_testing__P3054_locals:
+.cont.3311:
+    movs r0, #3
+    mov r7, sp
+    str r7, [r6, #4]
+    bl numops::toBoolDecr
+    cmp r0, #0
+    bne .jmpz49
+    b .brk.3311      
+.object PUSH
+.balign 4
+_ldlit_2:
+ .word _str42
+.object POP
+.jmpz49:
     mov r7, sp
     str r7, [r6, #4]
     bl Array_::mk
@@ -216,7 +237,7 @@ nfc_driver_testing__P3054_locals:
     add sp, #4*1 ; pop locals 1
     ldr r0, [sp, #0]      
     bl Buffer_fromArray__P2799
-_proccall53:
+_proccall50:
     add sp, #4*1 ; pop locals 1
     str r0, [sp, locals@0]
     @stackempty locals
@@ -224,18 +245,6 @@ _proccall53:
     str r7, [r6, #4]
     bl Array_::mk
     push {r0}; tmpstore @1
-    movs r1, #1
-    mov r7, sp
-    str r7, [r6, #4]
-    bl Array_::push
-    ldr r0, [sp, #4*0] ; tmpref @1
-    movs r1, #1
-    lsls r1, r1, #8
-    adds r1, #73
-    mov r7, sp
-    str r7, [r6, #4]
-    bl Array_::push
-    ldr r0, [sp, #4*0] ; tmpref @1
     movs r1, #9
     mov r7, sp
     str r7, [r6, #4]
@@ -295,6 +304,52 @@ _proccall53:
     str r7, [r6, #4]
     bl Array_::push
     ldr r0, [sp, #4*0] ; tmpref @1
+    push {r0} ; proc-arg
+    add sp, #4*1 ; pop locals 1
+    ldr r0, [sp, #0]      
+    bl Buffer_fromArray__P2799
+_proccall51:
+    add sp, #4*1 ; pop locals 1
+    str r0, [sp, locals@1]
+    @stackempty locals
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::mk
+    push {r0}; tmpstore @1
+    movs r1, #5
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::push
+    ldr r0, [sp, #4*0] ; tmpref @1
+    push {r0} ; proc-arg
+    add sp, #4*1 ; pop locals 1
+    ldr r0, [sp, #0]      
+    bl Buffer_fromArray__P2799
+_proccall52:
+    add sp, #4*1 ; pop locals 1
+    str r0, [sp, locals@2]
+    @stackempty locals
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::mk
+    push {r0}; tmpstore @1
+    movs r1, #7
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::push
+    ldr r0, [sp, #4*0] ; tmpref @1
+    push {r0} ; proc-arg
+    add sp, #4*1 ; pop locals 1
+    ldr r0, [sp, #0]      
+    bl Buffer_fromArray__P2799
+_proccall53:
+    add sp, #4*1 ; pop locals 1
+    str r0, [sp, locals@3]
+    @stackempty locals
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::mk
+    push {r0}; tmpstore @1
     movs r1, #107
     mov r7, sp
     str r7, [r6, #4]
@@ -313,13 +368,18 @@ _proccall53:
     bl Buffer_fromArray__P2799
 _proccall54:
     add sp, #4*1 ; pop locals 1
-    str r0, [sp, locals@1]
+    str r0, [sp, locals@4]
     @stackempty locals
     mov r7, sp
     str r7, [r6, #4]
     bl Array_::mk
     push {r0}; tmpstore @1
-    movs r1, #5
+    movs r1, #1
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::push
+    ldr r0, [sp, #4*0] ; tmpref @1
+    movs r1, #25
     mov r7, sp
     str r7, [r6, #4]
     bl Array_::push
@@ -330,20 +390,20 @@ _proccall54:
     bl Buffer_fromArray__P2799
 _proccall55:
     add sp, #4*1 ; pop locals 1
-    str r0, [sp, locals@2]
+    str r0, [sp, locals@5]
     @stackempty locals
     mov r7, sp
     str r7, [r6, #4]
     bl Array_::mk
     push {r0}; tmpstore @1
-    movs r1, #107
+    movs r1, #1
     mov r7, sp
     str r7, [r6, #4]
     bl Array_::push
     ldr r0, [sp, #4*0] ; tmpref @1
     movs r1, #1
     lsls r1, r1, #8
-    adds r1, #129
+    adds r1, #73
     mov r7, sp
     str r7, [r6, #4]
     bl Array_::push
@@ -354,32 +414,104 @@ _proccall55:
     bl Buffer_fromArray__P2799
 _proccall56:
     add sp, #4*1 ; pop locals 1
-    str r0, [sp, locals@3]
+    str r0, [sp, locals@6]
     @stackempty locals
-    ldr r0, [sp, locals@1]
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::mk
+    push {r0}; tmpstore @1
+    movs r1, #1
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::push
+    ldr r0, [sp, #4*0] ; tmpref @1
+    movs r1, #1
+    lsls r1, r1, #8
+    adds r1, #97
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::push
+    ldr r0, [sp, #4*0] ; tmpref @1
+    push {r0} ; proc-arg
+    add sp, #4*1 ; pop locals 1
+    ldr r0, [sp, #0]      
+    bl Buffer_fromArray__P2799
+_proccall57:
+    add sp, #4*1 ; pop locals 1
+    str r0, [sp, locals@7]
+    @stackempty locals
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::mk
+    push {r0}; tmpstore @1
+    movs r1, #1
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::push
+    ldr r0, [sp, #4*0] ; tmpref @1
+    movs r1, #1
+    lsls r1, r1, #8
+    adds r1, #173
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::push
+    ldr r0, [sp, #4*0] ; tmpref @1
+    push {r0} ; proc-arg
+    add sp, #4*1 ; pop locals 1
+    ldr r0, [sp, #0]      
+    bl Buffer_fromArray__P2799
+_proccall58:
+    add sp, #4*1 ; pop locals 1
+    str r0, [sp, locals@8]
+    @stackempty locals
+    ldr r0, [sp, locals@6]
     push {r0} ; proc-arg
     ldr r0, [sp, locals@2]
     push {r0} ; proc-arg
     bl helpers_bufferConcat__P2775
-_proccall57:
+_proccall59:
     add sp, #4*2 ; pop locals 2
     mov r3, r0
-    ldr r0, [sp, locals@3]
+    ldr r0, [sp, locals@1]
     push {r0} ; proc-arg
     push {r3} ; the one arg
     bl helpers_bufferConcat__P2775
-_proccall58:
+_proccall60:
     add sp, #4*2 ; pop locals 2
-    str r0, [sp, locals@4]
-    @stackempty locals
+    mov r3, r0
     ldr r0, [sp, locals@4]
+    push {r0} ; proc-arg
+    push {r3} ; the one arg
+    bl helpers_bufferConcat__P2775
+_proccall61:
+    add sp, #4*2 ; pop locals 2
+    str r0, [sp, locals@9]
+    @stackempty locals
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::mk
+    push {r0}; tmpstore @1
+    movs r1, #165
+    mov r7, sp
+    str r7, [r6, #4]
+    bl Array_::push
+    ldr r0, [sp, #4*0] ; tmpref @1
+    push {r0} ; proc-arg
+    add sp, #4*1 ; pop locals 1
+    ldr r0, [sp, #0]      
+    bl Buffer_fromArray__P2799
+_proccall62:
+    add sp, #4*1 ; pop locals 1
+    str r0, [sp, locals@10]
+    @stackempty locals
+    ldr r0, [sp, locals@9]
     push {r0} ; proc-arg
     bl _conv_1
     mov r7, sp
     str r7, [r6, #4]
     bl BufferMethods::toHex
     add sp, #4*1 ; pop locals 1
-    str r0, [sp, locals@5]
+    str r0, [sp, locals@11]
     @stackempty locals
     mov r7, sp
     str r7, [r6, #4]
@@ -421,11 +553,11 @@ _proccall58:
     add sp, #4*1 ; pop locals 1
     ldr r0, [sp, #0]      
     bl Buffer_fromArray__P2799
-_proccall59:
+_proccall63:
     add sp, #4*1 ; pop locals 1
-    str r0, [sp, locals@6]
+    str r0, [sp, locals@12]
     @stackempty locals
-    ldr r0, [sp, locals@4]
+    ldr r0, [sp, locals@10]
     push {r0} ; proc-arg
     movs r0, #10
     mov r7, sp
@@ -440,37 +572,65 @@ _proccall59:
     add sp, #4*2 ; pop locals 2
     bl _numops_fromInt
     @stackempty locals
+    movs r0, #125
+    lsls r0, r0, #3
+    mov r7, sp
+    str r7, [r6, #4]
+    bl basic::pause
+    @stackempty locals
+    ldr r0, [sp, locals@9]
+    push {r0} ; proc-arg
+    movs r0, #10
+    mov r7, sp
+    str r7, [r6, #4]
+    bl numops::toBoolDecr
+    push {r0} ; proc-arg
+    bl _conv_2
+    movs r0, #86
+    mov r7, sp
+    str r7, [r6, #4]
+    bl pins::i2cWriteBuffer
+    add sp, #4*2 ; pop locals 2
+    bl _numops_fromInt
+    @stackempty locals
+    movs r0, #125
+    lsls r0, r0, #3
+    mov r7, sp
+    str r7, [r6, #4]
+    bl basic::pause
+    @stackempty locals
     movs r0, #1
     mov r7, sp
     str r7, [r6, #4]
     bl numops::toBoolDecr
     mov r2, r0
     movs r0, #86
-    movs r1, #4
+    movs r1, #5
     mov r7, sp
     str r7, [r6, #4]
     bl pins::i2cReadBuffer
-    str r0, [sp, locals@7]
+    str r0, [sp, locals@13]
     @stackempty locals
-.cont.3354:
-    movs r0, #3
+    movs r0, #125
+    lsls r0, r0, #3
     mov r7, sp
     str r7, [r6, #4]
-    bl numops::toBoolDecr
-    cmp r0, #0
-    bne .jmpz60
-    b .brk.3354      
-.object PUSH
-.balign 4
-_ldlit_2:
- .word _str42
-.object POP
-.jmpz60:
-    movs r0, #1
-    str r0, [sp, locals@8]
+    bl basic::pause
     @stackempty locals
-.fortop.3356:
-    ldr r0, [sp, locals@8]
+    ldr r0, [sp, locals@13]
+    push {r0} ; proc-arg
+    bl _conv_1
+    mov r7, sp
+    str r7, [r6, #4]
+    bl BufferMethods::toHex
+    add sp, #4*1 ; pop locals 1
+    str r0, [sp, locals@14]
+    @stackempty locals
+    movs r0, #1
+    str r0, [sp, locals@15]
+    @stackempty locals
+.fortop.3401:
+    ldr r0, [sp, locals@15]
     push {r0} ; proc-arg
     ldr r7, [r6, #0]
     ldr r0, [r7, #12]
@@ -486,8 +646,8 @@ _ldlit_2:
     ldr r1, [sp, #4*0] ; estack
     bl _cmp_lt
     add sp, #4*2 ; pop locals 2
-    beq .brk.3356      
-.jmpz61:
+    beq .brk.3401      
+.jmpz64:
     mov r7, sp
     str r7, [r6, #4]
     bl String_::mkEmpty
@@ -495,7 +655,7 @@ _ldlit_2:
     ldr r7, [r6, #0]
     ldr r0, [r7, #12]
     push {r0} ; proc-arg
-    ldr r0, [sp, locals@8]
+    ldr r0, [sp, locals@15]
     push {r0} ; proc-arg
     ldr r0, [sp, #4*1] ; estack
     ldr r1, [sp, #4*0] ; estack
@@ -509,117 +669,28 @@ _ldlit_2:
     add sp, #4*2 ; pop locals 2
     push {r0} ; the one arg
     bl serial_writeLine__P2756
-_proccall62:
-    add sp, #4*1 ; pop locals 1
-    @stackempty locals
-.cont.3356:
-    ldr r0, [sp, locals@8]
-    movs r1, #3
-    bl _numops_adds
-    str r0, [sp, locals@8]
-    @stackempty locals
-    b .fortop.3356      
-.brk.3356:
-    ldr r0, _ldlit_4 ; _str44      
-    mov r7, sp
-    str r7, [r6, #4]
-    bl serial::writeString
-    @stackempty locals
-    ldr r0, [sp, locals@4]
-    push {r0} ; proc-arg
-    bl _conv_6
-    ldr r0, _ldlit_5 ; _str45      
-    mov r7, sp
-    str r7, [r6, #4]
-    bl String_::concat
-    add sp, #4*1 ; pop locals 1
-    push {r0} ; proc-arg
-    bl _conv_7
-    ldr r1, _ldlit_6 ; _str46      
-    mov r7, sp
-    str r7, [r6, #4]
-    bl String_::concat
-    add sp, #4*1 ; pop locals 1
-    push {r0} ; the one arg
-    bl serial_writeLine__P2756
-_proccall63:
-    add sp, #4*1 ; pop locals 1
-    @stackempty locals
-    ldr r0, [sp, locals@4]
-    push {r0} ; proc-arg
-    bl _conv_1
-    mov r7, sp
-    str r7, [r6, #4]
-    bl serial::writeBuffer
-    add sp, #4*1 ; pop locals 1
-    @stackempty locals
-    ldr r0, [sp, locals@2]
-    push {r0} ; proc-arg
-    bl _conv_6
-    ldr r0, _ldlit_7 ; _str47      
-    mov r7, sp
-    str r7, [r6, #4]
-    bl String_::concat
-    add sp, #4*1 ; pop locals 1
-    push {r0} ; proc-arg
-    bl _conv_7
-    ldr r1, _ldlit_6 ; _str46      
-    mov r7, sp
-    str r7, [r6, #4]
-    bl String_::concat
-    add sp, #4*1 ; pop locals 1
-    push {r0} ; the one arg
-    bl serial_writeLine__P2756
-_proccall64:
-    add sp, #4*1 ; pop locals 1
-    @stackempty locals
-    ldr r0, [sp, locals@2]
-    push {r0} ; proc-arg
-    bl _conv_1
-    mov r7, sp
-    str r7, [r6, #4]
-    bl serial::writeBuffer
-    add sp, #4*1 ; pop locals 1
-    @stackempty locals
-    ldr r0, [sp, locals@1]
-    push {r0} ; proc-arg
-    bl _conv_6
-    ldr r0, _ldlit_8 ; _str48      
-    mov r7, sp
-    str r7, [r6, #4]
-    bl String_::concat
-    add sp, #4*1 ; pop locals 1
-    push {r0} ; proc-arg
-    bl _conv_7
-    ldr r1, _ldlit_6 ; _str46      
-    mov r7, sp
-    str r7, [r6, #4]
-    bl String_::concat
-    add sp, #4*1 ; pop locals 1
-    push {r0} ; the one arg
-    bl serial_writeLine__P2756
 _proccall65:
     add sp, #4*1 ; pop locals 1
     @stackempty locals
-    ldr r0, [sp, locals@1]
-    push {r0} ; proc-arg
-    bl _conv_1
-    mov r7, sp
-    str r7, [r6, #4]
-    bl serial::writeBuffer
-    add sp, #4*1 ; pop locals 1
+.cont.3401:
+    ldr r0, [sp, locals@15]
+    movs r1, #3
+    bl _numops_adds
+    str r0, [sp, locals@15]
     @stackempty locals
-    ldr r0, [sp, locals@3]
+    b .fortop.3401      
+.brk.3401:
+    ldr r0, [sp, locals@11]
     push {r0} ; proc-arg
     bl _conv_6
-    ldr r0, _ldlit_9 ; _str49      
+    ldr r0, _ldlit_4 ; _str44      
     mov r7, sp
     str r7, [r6, #4]
     bl String_::concat
     add sp, #4*1 ; pop locals 1
     push {r0} ; proc-arg
     bl _conv_7
-    ldr r1, _ldlit_6 ; _str46      
+    ldr r1, _ldlit_5 ; _str45      
     mov r7, sp
     str r7, [r6, #4]
     bl String_::concat
@@ -629,25 +700,17 @@ _proccall65:
 _proccall66:
     add sp, #4*1 ; pop locals 1
     @stackempty locals
-    ldr r0, [sp, locals@3]
-    push {r0} ; proc-arg
-    bl _conv_1
-    mov r7, sp
-    str r7, [r6, #4]
-    bl serial::writeBuffer
-    add sp, #4*1 ; pop locals 1
-    @stackempty locals
-    ldr r0, [sp, locals@5]
+    ldr r0, [sp, locals@14]
     push {r0} ; proc-arg
     bl _conv_6
-    ldr r0, _ldlit_10 ; _str50      
+    ldr r0, _ldlit_6 ; _str46      
     mov r7, sp
     str r7, [r6, #4]
     bl String_::concat
     add sp, #4*1 ; pop locals 1
     push {r0} ; proc-arg
     bl _conv_7
-    ldr r1, _ldlit_6 ; _str46      
+    ldr r1, _ldlit_5 ; _str45      
     mov r7, sp
     str r7, [r6, #4]
     bl String_::concat
@@ -667,19 +730,13 @@ _proccall67:
 _proccall68:
     add sp, #4*2 ; pop locals 2
     @stackempty locals
-    movs r0, #125
-    lsls r0, r0, #3
-    mov r7, sp
-    str r7, [r6, #4]
-    bl basic::pause
-    @stackempty locals
-    b .cont.3354      
-.brk.3354:
+    b .cont.3311      
+.brk.3311:
 .ret.3054:
     @stackempty locals
     movs r0, #0
 .final_0_2:
-    add sp, #4*9 ; pop locals 9
+    add sp, #4*16 ; pop locals 16
 nfc_driver_testing__P3054_end:
     pop {pc}
     @stackempty func
@@ -990,23 +1047,6 @@ images_iconImage__P2429_locals:
     @dummystack 1
     add sp, #4*1 ; pop locals 1
     b .switch_21_4      
-.object PUSH
-.balign 4
-_ldlit_4:
- .word _str44
-_ldlit_5:
- .word _str45
-_ldlit_6:
- .word _str46
-_ldlit_7:
- .word _str47
-_ldlit_8:
- .word _str48
-_ldlit_9:
- .word _str49
-_ldlit_10:
- .word _str50
-.object POP
 .jmpz91:
     movs r0, #29
     ldr r1, [sp, #4*0] ; tmpref @1
@@ -1128,6 +1168,15 @@ _ldlit_10:
     @dummystack 1
     add sp, #4*1 ; pop locals 1
     b .switch_32_4      
+.object PUSH
+.balign 4
+_ldlit_4:
+ .word _str44
+_ldlit_5:
+ .word _str45
+_ldlit_6:
+ .word _str46
+.object POP
 .jmpz102:
     movs r0, #51
     ldr r1, [sp, #4*0] ; tmpref @1
@@ -1220,341 +1269,341 @@ _ldlit_10:
     pop {r0} ; tmpref @1
     b .switch_41_4      
 .switch_0_4:
-    ldr r0, _ldlit_12 ; _img0      
+    ldr r0, _ldlit_8 ; _img0      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_1_4:
-    ldr r0, _ldlit_13 ; _img1      
+    ldr r0, _ldlit_9 ; _img1      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_2_4:
-    ldr r0, _ldlit_14 ; _img2      
+    ldr r0, _ldlit_10 ; _img2      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_3_4:
-    ldr r0, _ldlit_15 ; _img3      
+    ldr r0, _ldlit_11 ; _img3      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_4_4:
-    ldr r0, _ldlit_16 ; _img4      
+    ldr r0, _ldlit_12 ; _img4      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_5_4:
-    ldr r0, _ldlit_17 ; _img5      
+    ldr r0, _ldlit_13 ; _img5      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_6_4:
-    ldr r0, _ldlit_18 ; _img6      
+    ldr r0, _ldlit_14 ; _img6      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_7_4:
-    ldr r0, _ldlit_19 ; _img7      
+    ldr r0, _ldlit_15 ; _img7      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_8_4:
-    ldr r0, _ldlit_20 ; _img8      
+    ldr r0, _ldlit_16 ; _img8      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_9_4:
-    ldr r0, _ldlit_21 ; _img9      
+    ldr r0, _ldlit_17 ; _img9      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_10_4:
-    ldr r0, _ldlit_22 ; _img10      
+    ldr r0, _ldlit_18 ; _img10      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_11_4:
-    ldr r0, _ldlit_23 ; _img11      
+    ldr r0, _ldlit_19 ; _img11      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_12_4:
-    ldr r0, _ldlit_24 ; _img12      
+    ldr r0, _ldlit_20 ; _img12      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_13_4:
-    ldr r0, _ldlit_25 ; _img13      
+    ldr r0, _ldlit_21 ; _img13      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_14_4:
-    ldr r0, _ldlit_26 ; _img14      
+    ldr r0, _ldlit_22 ; _img14      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_15_4:
-    ldr r0, _ldlit_27 ; _img15      
+    ldr r0, _ldlit_23 ; _img15      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_16_4:
-    ldr r0, _ldlit_28 ; _img16      
+    ldr r0, _ldlit_24 ; _img16      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_17_4:
-    ldr r0, _ldlit_29 ; _img17      
+    ldr r0, _ldlit_25 ; _img17      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_18_4:
-    ldr r0, _ldlit_30 ; _img18      
+    ldr r0, _ldlit_26 ; _img18      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_19_4:
-    ldr r0, _ldlit_31 ; _img19      
+    ldr r0, _ldlit_27 ; _img19      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_20_4:
-    ldr r0, _ldlit_32 ; _img20      
+    ldr r0, _ldlit_28 ; _img20      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_21_4:
-    ldr r0, _ldlit_33 ; _img21      
+    ldr r0, _ldlit_29 ; _img21      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_22_4:
-    ldr r0, _ldlit_34 ; _img22      
+    ldr r0, _ldlit_30 ; _img22      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_23_4:
-    ldr r0, _ldlit_35 ; _img23      
+    ldr r0, _ldlit_31 ; _img23      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_24_4:
-    ldr r0, _ldlit_36 ; _img24      
+    ldr r0, _ldlit_32 ; _img24      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_25_4:
-    ldr r0, _ldlit_37 ; _img25      
+    ldr r0, _ldlit_33 ; _img25      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_26_4:
-    ldr r0, _ldlit_38 ; _img26      
+    ldr r0, _ldlit_34 ; _img26      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_27_4:
-    ldr r0, _ldlit_39 ; _img27      
+    ldr r0, _ldlit_35 ; _img27      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_28_4:
-    ldr r0, _ldlit_40 ; _img28      
+    ldr r0, _ldlit_36 ; _img28      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_29_4:
-    ldr r0, _ldlit_41 ; _img29      
+    ldr r0, _ldlit_37 ; _img29      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_30_4:
-    ldr r0, _ldlit_42 ; _img30      
+    ldr r0, _ldlit_38 ; _img30      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_31_4:
-    ldr r0, _ldlit_43 ; _img31      
+    ldr r0, _ldlit_39 ; _img31      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_32_4:
-    ldr r0, _ldlit_44 ; _img32      
+    ldr r0, _ldlit_40 ; _img32      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_33_4:
-    ldr r0, _ldlit_45 ; _img33      
+    ldr r0, _ldlit_41 ; _img33      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_34_4:
-    ldr r0, _ldlit_46 ; _img34      
+    ldr r0, _ldlit_42 ; _img34      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_35_4:
-    ldr r0, _ldlit_47 ; _img35      
+    ldr r0, _ldlit_43 ; _img35      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_36_4:
-    ldr r0, _ldlit_48 ; _img36      
+    ldr r0, _ldlit_44 ; _img36      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_37_4:
-    ldr r0, _ldlit_49 ; _img37      
+    ldr r0, _ldlit_45 ; _img37      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_38_4:
-    ldr r0, _ldlit_50 ; _img38      
+    ldr r0, _ldlit_46 ; _img38      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_39_4:
-    ldr r0, _ldlit_51 ; _img39      
+    ldr r0, _ldlit_47 ; _img39      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .object PUSH
 .balign 4
-_ldlit_12:
+_ldlit_8:
  .word _img0
-_ldlit_13:
+_ldlit_9:
  .word _img1
-_ldlit_14:
+_ldlit_10:
  .word _img2
-_ldlit_15:
+_ldlit_11:
  .word _img3
-_ldlit_16:
+_ldlit_12:
  .word _img4
-_ldlit_17:
+_ldlit_13:
  .word _img5
-_ldlit_18:
+_ldlit_14:
  .word _img6
-_ldlit_19:
+_ldlit_15:
  .word _img7
-_ldlit_20:
+_ldlit_16:
  .word _img8
-_ldlit_21:
+_ldlit_17:
  .word _img9
-_ldlit_22:
+_ldlit_18:
  .word _img10
-_ldlit_23:
+_ldlit_19:
  .word _img11
-_ldlit_24:
+_ldlit_20:
  .word _img12
-_ldlit_25:
+_ldlit_21:
  .word _img13
-_ldlit_26:
+_ldlit_22:
  .word _img14
-_ldlit_27:
+_ldlit_23:
  .word _img15
-_ldlit_28:
+_ldlit_24:
  .word _img16
-_ldlit_29:
+_ldlit_25:
  .word _img17
-_ldlit_30:
+_ldlit_26:
  .word _img18
-_ldlit_31:
+_ldlit_27:
  .word _img19
-_ldlit_32:
+_ldlit_28:
  .word _img20
-_ldlit_33:
+_ldlit_29:
  .word _img21
-_ldlit_34:
+_ldlit_30:
  .word _img22
-_ldlit_35:
+_ldlit_31:
  .word _img23
-_ldlit_36:
+_ldlit_32:
  .word _img24
-_ldlit_37:
+_ldlit_33:
  .word _img25
-_ldlit_38:
+_ldlit_34:
  .word _img26
-_ldlit_39:
+_ldlit_35:
  .word _img27
-_ldlit_40:
+_ldlit_36:
  .word _img28
-_ldlit_41:
+_ldlit_37:
  .word _img29
-_ldlit_42:
+_ldlit_38:
  .word _img30
-_ldlit_43:
+_ldlit_39:
  .word _img31
-_ldlit_44:
+_ldlit_40:
  .word _img32
-_ldlit_45:
+_ldlit_41:
  .word _img33
-_ldlit_46:
+_ldlit_42:
  .word _img34
-_ldlit_47:
+_ldlit_43:
  .word _img35
-_ldlit_48:
+_ldlit_44:
  .word _img36
-_ldlit_49:
+_ldlit_45:
  .word _img37
-_ldlit_50:
+_ldlit_46:
  .word _img38
-_ldlit_51:
+_ldlit_47:
  .word _img39
 .object POP
 .switch_40_4:
-    ldr r0, _ldlit_53 ; _img40      
+    ldr r0, _ldlit_49 ; _img40      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
 .switch_41_4:
-    ldr r0, _ldlit_54 ; _img41      
+    ldr r0, _ldlit_50 ; _img41      
     mov r7, sp
     str r7, [r6, #4]
     bl images::createImage
     b .ret.2429      
-.brk.3450:
+.brk.3447:
     movs r0, #0
 .ret.2429:
     @stackempty locals
@@ -1676,25 +1725,25 @@ serial_writeLine__P2756_locals:
     movs r0, #1
     str r0, [sp, locals@1]
     @stackempty locals
-.fortop.3603:
+.fortop.3598:
     ldr r0, [sp, locals@1]
     ldr r1, [sp, locals@0]
     bl _cmp_lt
-    beq .brk.3603      
+    beq .brk.3598      
 .jmpz113:
-    ldr r0, _ldlit_55 ; _str43      
+    ldr r0, _ldlit_51 ; _str43      
     mov r7, sp
     str r7, [r6, #4]
     bl serial::writeString
     @stackempty locals
-.cont.3603:
+.cont.3598:
     ldr r0, [sp, locals@1]
     movs r1, #3
     bl _numops_adds
     str r0, [sp, locals@1]
     @stackempty locals
-    b .fortop.3603      
-.brk.3603:
+    b .fortop.3598      
+.brk.3598:
 .else_2_5:
 .afterif_3_5:
     ldr r7, [r6, #0]
@@ -1842,7 +1891,7 @@ Buffer_fromArray__P2799_locals:
     movs r0, #1
     str r0, [sp, locals@1]
     @stackempty locals
-.fortop.3650:
+.fortop.3647:
     ldr r0, [sp, locals@1]
     push {r0} ; proc-arg
     ldr r0, [sp, args@0]
@@ -1858,7 +1907,7 @@ Buffer_fromArray__P2799_locals:
     ldr r1, [sp, #4*0] ; estack
     bl _cmp_lt
     add sp, #4*2 ; pop locals 2
-    beq .brk.3650      
+    beq .brk.3647      
 .jmpz114:
     ldr r0, [sp, locals@0]
     push {r0} ; proc-arg
@@ -1877,14 +1926,14 @@ Buffer_fromArray__P2799_locals:
     bl _pxt_buffer_set
     add sp, #4*3 ; pop locals 3
     @stackempty locals
-.cont.3650:
+.cont.3647:
     ldr r0, [sp, locals@1]
     movs r1, #3
     bl _numops_adds
     str r0, [sp, locals@1]
     @stackempty locals
-    b .fortop.3650      
-.brk.3650:
+    b .fortop.3647      
+.brk.3647:
     ldr r0, [sp, locals@0]
 .ret.2799:
     @stackempty locals
@@ -2027,11 +2076,11 @@ _pxt_buffer_get:
     pop {pc}
 .object PUSH
 .balign 4
-_ldlit_53:
+_ldlit_49:
  .word _img40
-_ldlit_54:
+_ldlit_50:
  .word _img41
-_ldlit_55:
+_ldlit_51:
  .word _str43
 .object POP
 .fail:
@@ -2334,7 +2383,7 @@ _pxt_map_set:
 _pxt_bind_helper:
     push {r0, r2}
     movs r0, #2
-    ldr r1, _ldlit_57 ; _pxt_bind_lit      
+    ldr r1, _ldlit_53 ; _pxt_bind_lit      
     mov r7, sp
     str r7, [r6, #4]
     bl pxt::mkAction
@@ -2351,7 +2400,7 @@ _pxt_bind_lit:
     cmp r4, #12
     bge .fail
     lsls r3, r4, #2
-    ldr r2, _ldlit_58 ; _pxt_copy_list      
+    ldr r2, _ldlit_54 ; _pxt_copy_list      
     ldr r1, [r2, r3]
     ldr r3, [r0, #12]
     ldr r2, [r0, #16]
@@ -2813,9 +2862,9 @@ _conv_13:
     pop {pc}
 .object PUSH
 .balign 4
-_ldlit_57:
+_ldlit_53:
  .word _pxt_bind_lit
-_ldlit_58:
+_ldlit_54:
  .word _pxt_copy_list
 .object POP
     @stackempty args
@@ -3449,47 +3498,23 @@ _str43:
             .object _str44
 _str44:
  .word pxt::string_inline_ascii_vt
-    .short 5
-    .string "hello"
+    .short 18
+    .string "\n decode line is :"
             .balign 4
             .object _str45
 _str45:
  .word pxt::string_inline_ascii_vt
-    .short 16
-    .string "the Sendlist is:"
+    .short 1
+    .string "\n"
             .balign 4
             .object _str46
 _str46:
  .word pxt::string_inline_ascii_vt
-    .short 1
-    .string "\n"
+    .short 24
+    .string "\n reply decode line is :"
             .balign 4
             .object _str47
 _str47:
- .word pxt::string_inline_ascii_vt
-    .short 11
-    .string "the PCB is:"
-            .balign 4
-            .object _str48
-_str48:
- .word pxt::string_inline_ascii_vt
-    .short 12
-    .string "the test is:"
-            .balign 4
-            .object _str49
-_str49:
- .word pxt::string_inline_ascii_vt
-    .short 11
-    .string "the CRC is:"
-            .balign 4
-            .object _str50
-_str50:
- .word pxt::string_inline_ascii_vt
-    .short 18
-    .string "\n decode line is :"
-            .balign 4
-            .object _str51
-_str51:
  .word pxt::string_inline_ascii_vt
     .short 10
     .string "my-project"
