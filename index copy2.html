@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Web NFC Demo</h1>
+  <button id="scanButton">Scan Card</button> 
+  <button id="writeButton">Write Card</button>
+  <button id="resetButton">Reset Card</button>
+  <p id="log"></p>
+
+  <script>
+    const log = (msg) => document.getElementById('log').innerText += msg + '\n'; 
+
+    let nfcController = null; //global controller to ensure only 1 function is running at the same time
+    let NDEF = null; //global NDEF reader variable
+
+    function stopExisitingScan() //fucntion to ensure all functions is killed before new function is running
+    {
+      if (nfcController) 
+      {
+        nfcController.abort();
+        log("Stop previous operation");
+      }
+
+      if (NDEF)
+      {
+        NDEF.onreading = null;
+        NDEF.onreadingerror = null;
+      }
+      NDEF = new NDEFReader();
+      nfcController = new AbortController()
+    }
+
+
+    // Reading Function, responsible for reading data inside the tag for user to use what data they are about to control
+    // Current version - v1: Read all data on NFC chip
+    //v2 plan: get to read certain data record
+    //v3 plan: read specific block of data as input, mode of display
+    document.getElementById('scanButton').onclick = async () => //wait for NFC to read the file
+    {
+      await stopExisitingScan(); //wait for all states to be killed
+      try 
+      {
+        await NDEF.scan(); //wait for permission to use NFC
+        log("Scan started...");
+
+        reader.onreading = ({ message, serialNumber }) => //wait until NFC device(tag/ card) is scanned
+        {
+          log(`> Serial Number: ${serialNumber}`); //ID of NFC tag
+          const decoder = new TextDecoder(); //NFC data decoder -> convert to text instead of binaries
+          for (const record of message.records) //loop the entire NFC tag data until none
+          {
+            log(`> Record: ${decoder.decode(record.data)} (${record.recordType})`);  //decode current record's data section, Record.date = info, record.recordtype = label of data
+            //Use ${} for better literal writing, need to use ` instead of ""
+          }
+          stopExisitingScan();
+        };
+      } catch (error) 
+      {
+        log("Error: " + error);
+      }
+    };
+
+    // Writing Function, responsible for modifying data inside the tag
+    // Current version - v2: Add new data after existing data
+    //v3 plan: overwrite specific data type
+    // v4 plan: allow user to overwrite data (String) using webnfc interface instead of static code
+    document.getElementById('writeButton').onclick = async () => 
+    {
+      stopExisitingScan();
+      try 
+      {
+        const NDEF = new NDEFReader(); // instance of nedf to record exisitn data
+        log ("Ready to write.");
+        await NDEF.scan();
+        NDEF.onreading = async ({message}) => //only message matters, async for full read complete
+        {
+          try
+          {
+            const updateRecord = message.records.map(record => ({
+              recordType: record.recordType,
+              data: record.data,
+              id: record.id, //important! can be used for v3 and 4 later on
+              encoding: record.encoding
+            }));
+
+            updateRecord.push({
+              recordType: "text",
+              data: "WebNFC write"
+            }); //get data onto last block like stack
+
+            await NDEF.write({ records: updateRecord}); //update data block
+
+            log(`Successfully write new data: now tag has ${updateRecord.length} records.`)
+
+            nfcController.abort(); //stops the code from looping and adding new data block and update it
+          }
+          catch (writeError)
+          {
+            log("Update error: " + writeError);
+          }
+        };
+      } catch (error) 
+      {
+        log("Write Error: " + error);
+      }
+    };
+
+    //Reset Funciton: to reset to a specific states for the card
+    // Current version - v1: reset to factory (?) states for the card
+    // v2: 
+    document.getElementById('resetButton').onclick = async () => 
+    {
+      stopExisitingScan();
+      try
+      {
+        const NDEF = new NDEFReader();
+        const resetData = [
+          {
+            recordType: "text",
+            data: "Hello from Web NFC!",
+            id: "Status_record"
+          }
+        ];
+
+        log("ready to reset.");
+        await NDEF.write({ records: resetData });
+        log("Tag has been reset!");
+        nfcController.abort();
+      }
+      catch (error)
+      {
+        log("Reset Error: " + error);
+      }
+    };
+  </script>
+</body>
+</html>
