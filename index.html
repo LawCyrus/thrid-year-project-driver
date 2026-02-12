@@ -4,25 +4,38 @@
   button to confirm what they are doing -->
   <div class="menu-group">
     <button id="writeMenuButton">Write Options ▾</button>
-    <div id="writeSubmenu" style="display: none; border: 1px solid #ccc; padding: 10px; margin-top: 5px; background: #f9f9f9;">
+    <div id="writeSubmenu" style="display: none; border: 1px solid hsl(0, 0%, 80%); padding: 10px; margin-top: 5px; background: #f9f9f9;">
+
+      <!-- Mode selection on write functions-->
       <p><strong>Select Mode:</strong></p>
       <button id="appendButton">Add New Record</button>
       <button id="overwriteButton">Overwrite by ID</button>
       <br><br>
       <label>ID to Target:</label>
       <input type="text" id="targetID" value="Factory_Record">
+
+      <!--a microbit led preset to test the microbit LED interactions-->
+      <hr><p><strong>micro:bit LED Presets:</strong></p>
+      <select id = "presetList">
+        <option value = "0101011111111110111000100">Heart</option>
+        <option value="1111110001100011000111111">Square</option>
+        <option value="0000001010000001000101110">Smile</option>
+      </select>
+      <button id="writePresetButton">Preset Append</button>
     </div>
     <button id="readMenuButton">Read Options ▾</button>
     <button id="resetMenuButton">Reset Options ▾</button>
   </div>
 <body>
-  <h1>Web NFC Demov 2</h1>
+  <h1>Web NFC Demo</h1>
   <button id="scanButton">Scan Card</button> 
   <button id="writeButton">Write Card</button>
   <button id="resetButton">Reset Card</button>
   <p id="log"></p>
 
   <script>
+    const FIXED_BLOCK_SIZE = 32; //set default data size in terms of 32 bytes
+
     const log = (msg) => document.getElementById('log').innerText += msg + '\n'; 
 
     let nfcController = null; //global controller to ensure only 1 function is running at the same time
@@ -36,6 +49,17 @@
       }
 
       nfcController = new AbortController()
+    }
+
+    function FixedSizeformat(text) 
+    {
+      if (text.length > FIXED_BLOCK_SIZE)
+      {
+        // Trim if too long
+        return text.substring(0, FIXED_BLOCK_SIZE);
+      }
+    // Pad with spaces if too short
+    return text.padEnd(FIXED_BLOCK_SIZE, " "); 
     }
 
     document.getElementById('writeMenuButton').onclick = () => //function requires for the topdown menu to workm properly
@@ -69,7 +93,7 @@
           const decoder = new TextDecoder(); //NFC data decoder -> convert to text instead of binaries
           for (const record of message.records) //loop the entire NFC tag data until none
           {
-            log(`> Record: ${decoder.decode(record.data)} (${record.recordType}) (${record.id})`);  //decode current record's data section, Record.date = info, record.recordtype = label of data
+            log(`> Record: ${decoder.decode(record.data).trim()} (${record.recordType}) (${record.id})`);  //decode current record's data section, Record.date = info, record.recordtype = label of data
             //Use ${} for better literal writing, need to use ` instead of ""
           }
           nfcController.abort();
@@ -90,33 +114,52 @@
     {
       stopExisitingScan();
       const targetID = document.getElementById('targetID').value;
+
+      const select = document.getElementById('presetList');
+      const pattern = select.value; //microbit 25 bit length on LED on or off
+      const label = select.options[select.selectedIndex].text; //name of preset file
+
       try 
       {
         const NDEF = new NDEFReader(); // instance of nedf to record exisitn data
         log (`Mode: ${mode}, Ready to write.`);
         await NDEF.scan({signal: nfcController.signal});
+
         NDEF.onreading = async ({message}) => //only message matters, async for full read complete
         {
           try
           {
-            let records = message.records.map(record => ({
+            let records = message.records.map(record => (
+            {
               recordType: record.recordType,
               data: record.data,
               id: record.id, //important! can be used for v3 and 4 later on
             }));
 
+            const nextNum = records.length + 1;
+
             switch (mode)
             {
               case "append":
-                const nextNum = records.length +1;
-                const countId = "Record_" + nextNum;
                 records.push(
                 {
                   recordType: "text",
-                  data: "WebNFC write" + nextNum,
-                  id: countId
+                  data: FixedSizeformat("WebNFC write" + nextNum), //data will always be 32 bytes
+                  id: "String" + nextNum
                 }); //get data onto last block like stack
                 break;
+
+              case "preset": //the write logic on micrbit LED data
+                records.push(
+                  {
+                    recordType: "text",
+                    data: FixedSizeformat(pattern),
+                    id: "IMG" + nextNum
+                  }
+                );
+                log(`Adding Preset LED: ${label}`);
+                break;
+              
               case "overwrite":
                 let found = false; //make sure the targetIID on the input can actually be found in the tag
                 records = records.map(r =>
@@ -127,7 +170,7 @@
                     return {
                       recordType: "text",
                       id: targetID,
-                      data: "Overwritten Data"
+                      data: FixedSizeformat("Overwritten Data")
                     };
                   }
                   return r;
@@ -136,11 +179,8 @@
                 break;
             }
 
-
             await NDEF.write({ records: records}); //update data block
-
             log(`Successfully write new data: now tag has ${records.length} records.`)
-
             nfcController.abort(); //stops the code from looping and adding new data block and update it
           }
           catch (writeError)
@@ -156,6 +196,8 @@
 
     document.getElementById('appendButton').onclick = () => NFCWrite("append");
     document.getElementById('overwriteButton').onclick = () => NFCWrite("overwrite");
+    document.getElementById('writePresetButton').onclick = () => NFCWrite("preset");
+  
 
     //Reset Funciton: to reset to a specific states for the card
     // Current version - v1: reset to factory (?) states for the card
@@ -170,7 +212,7 @@
           {
             recordType: "text",
             data: "Hello from Web NFC!",
-            id: "Factory_Record"
+            id: "String0"
           }
         ];
 
