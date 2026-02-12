@@ -30,9 +30,9 @@ namespace MFRC522 {
     let MAX_LEN = 16
     let PCD_AUTHENT = 0x0E
     let PCD_TRANSCEIVE = 0x0C
-    let PICC_REQIDL = 0x26
-    let PICC_AUTHENT1A = 0x60
-    let PICC_AUTHENT1B = 0x61
+    export let PICC_REQIDL = 0x26
+    export let PICC_AUTHENT1A = 0x60
+    export let PICC_AUTHENT1B = 0x61
 
     let ComIrqReg = 0x04
     let DivIrqReg = 0x05
@@ -69,11 +69,12 @@ namespace MFRC522 {
         TagSelect(uid)
 
         //various NFC tag size 
-        let maxSector = 0 
-        if (Type2 == 0x08) maxSector = 16
-        else if (Type2 == 0x18) maxSector = 40
-        else if (Type2 == 0x09) maxSector = 5
-        else maxSector = 16
+        // set it to 5 since microbit has small RAM size
+        let maxSector = 5
+        // if (Type2 == 0x08) maxSector = 16
+        // else if (Type2 == 0x18) maxSector = 40
+        // else if (Type2 == 0x09) maxSector = 5
+        // else maxSector = 16
 
         serial.writeLine("Reading the tag... Do not lose contact")
         for (let sector = 0; sector < maxSector; sector++) //only 16 sector for the testing nfc card
@@ -82,11 +83,12 @@ namespace MFRC522 {
             if (sector < 32) //5,16 sector
             {
                 trailorBlock = (sector*4)+3
-            }else //40 sectors
-            {
-                //127 = last block of small blocks sectors, -31 for large sectors passed, +15 for small block inside a 16 clokc sector
-                trailorBlock = 127 + ((sector -31) * 16) + 15
             }
+            // else //40 sectors
+            // {
+            //     //127 = last block of small blocks sectors, -31 for large sectors passed, +15 for small block inside a 16 clokc sector
+            //     trailorBlock = 127 + ((sector -31) * 16) + 15
+            // }
 
             status = Authent(PICC_AUTHENT1B, trailorBlock, Key, uid)
 
@@ -213,7 +215,7 @@ namespace MFRC522 {
 
 
 
-    function Request (reqMode: number):[number, any] {
+    export function Request (reqMode: number):[number, any] {
         let Type:number[] = []
         SPI_Write(BitFramingReg, 0x07)
         Type.push(reqMode)
