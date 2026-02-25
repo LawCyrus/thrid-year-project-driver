@@ -18,12 +18,19 @@
       <button id="overwriteButton">Overwrite by ID</button>
       <br><br>
       <label>ID to Target:</label>
-      <input type="text" id="targetID" value="String0">
+      <input type="text" id="targetID" value="String1">
 
       <!-- Area for user to input their own string-->
       <p><strong>Custom Input:</strong></p>
       <input type="text" id="userInput" placeholder="Enter text here:" maxlength="25">
       <br><br>
+
+      <!-- Area for user to add in LED image of their choice-->
+       <hr><p><strong>Custom LED Grid:</p></strong></p>
+       <div id="ledGrid" style="display: grid; grid-template-columns: repeat(5, 30px); gap: 5px; margin-bottom:10px;">
+       </div>
+       <button id="writeCustomLED">Write LED Image</button>
+
 
       <!--a microbit led preset to test the microbit LED interactions-->
       <hr><p><strong>micro:bit LED Presets:</strong></p>
@@ -46,10 +53,40 @@
 
   <script>
     const FIXED_BLOCK_SIZE = 25; //minusing the NDEF header, only have 25 bytes of data remaining if wanting to do 32 bytes data block
+    let nfcController = null; //global controller to ensure only 1 function is running at the same time
+
+    const gridContainer = document.getElementById('ledGrid'); //creates a 5x5 Grid UI for user to input
+    for (let i =0; i < 25; i++)
+    {
+      const led = document.createElement('div');
+      led.style.width = '30px';
+      led.style.height = '30px';
+      led.style.border = '1px solid #ccc';
+      led.style.backgroundColor = '#fff';
+      led.style.cursor = 'pointer';
+      led.dataset.state = "0";
+
+      led.onclick = () => //wait until click, then setup the code
+      {
+        if (led.dataset.state === "0") //if the current clicked led is not set to on
+        {
+          led.style.backgroundColor = 'red';
+          led.dataset.state = "1";
+        }else //set that led to 0(off)
+        {
+          led.style.backgroundColor = '#fff';
+          led.dataset.state = "0";
+        }
+      };
+      gridContainer.appendChild(led);
+    }
+
+    function getGridString()
+    {
+      return Array.from(gridContainer.children).map(led => led.dataset.state).join('');
+    }
 
     const log = (msg) => document.getElementById('log').innerText += msg + '\n'; 
-
-    let nfcController = null; //global controller to ensure only 1 function is running at the same time
 
     function stopExisitingScan() //fucntion to ensure all functions is killed before new function is running
     {
@@ -72,6 +109,145 @@
     // Pad with spaces if too short
     return text.padEnd(FIXED_BLOCK_SIZE, " "); 
     }
+
+    // Writing Function, responsible for modifying data inside the tag
+    // Current version - v3: overwrite specific data type
+    // v4 plan: allow user to overwrite data (String) using webnfc interface instead of static code
+    async function NFCWrite(mode, customPattern = null) //customPattern = null to make the custompattern parameter optional
+    {
+      stopExisitingScan();
+      const targetID = document.getElementById('targetID').value;
+      const customText = document.getElementById('userInput').value;
+
+      const select = document.getElementById('presetList');
+      //const pattern = select.value; //microbit 25 bit length on LED on or off
+      const label = select.options[select.selectedIndex].text;  //name of preset
+
+      const finalPattern = customPattern || select.value;
+
+      try 
+      {
+        const NDEF = new NDEFReader(); // instance of nedf to record exisitn data
+        log (`Mode: ${mode}, Ready to write.`);
+        await NDEF.scan({signal: nfcController.signal});
+
+        NDEF.onreading = async ({message}) => //only message matters, async for full read complete
+        {
+          try
+          {
+            let records = message.records.map(record => (
+            {
+              recordType: record.recordType,
+              data: record.data,
+              id: record.id, //important! can be used for v3 and 4 later on
+            }));
+
+            const nextNum = records.length + 1;
+
+            switch (mode)
+            {
+              case "append":
+                records.push(
+                {
+                  recordType: "text",
+                  data: FixedSizeformat(customText || "WebNFC write" + nextNum), //either user input string for writex as data string
+                  id: "STRING" + nextNum
+                }); //get data onto last block like stack
+                break;
+
+              case "LED": //the write logic on micrbit LED data
+                records.push(
+                  {
+                    recordType: "text",
+                    data: FixedSizeformat(finalPattern),
+                    id: "IMG" + nextNum
+                  }
+                );
+                //log(`adding in LED data...`);
+                log(`Adding LED: ${label}`);
+                break;
+              
+              case "overwrite":
+                let found = false; //make sure the targetIID on the input can actually be found in the tag
+                records = records.map(r =>
+                {
+                  if (r.id === targetID)
+                  {
+                    found = true;
+                    return {
+                      recordType: "text",
+                      data: FixedSizeformat(customText || "Overwritten Data"), //overwrites a custom string of default to "xx"
+                      id: targetID
+                    };
+                  }
+                  return r;
+                });
+                if (!found) log("ID not found, adding new instead");
+                break;
+            }
+
+            await NDEF.write({ records: records}); //update data block
+            log(`Successfully write new data: now tag has ${records.length} records.`)
+            nfcController.abort(); //stops the code from looping and adding new data block and update it
+          }
+          catch (writeError)
+          {
+            log("Update error: " + writeError);
+          }
+        };
+      } catch (error) 
+      {
+        log("Write Error: " + error);
+      }
+    };
+
+    document.getElementById('appendButton').onclick = () => NFCWrite("append");
+    document.getElementById('overwriteButton').onclick = () => NFCWrite("overwrite");
+    document.getElementById('writePresetButton').onclick = () => NFCWrite("LED");
+
+    document.getElementById('writeCustomLED').onclick = () =>
+    {
+      const userPattern = getGridString();
+      NFCWrite("LED", userPattern);
+    }
+  
+    //Reset Funciton: to reset to a specific states for the card
+    // Current version - v1: reset to factory (?) states for the card
+    // v2: 
+    document.getElementById('resetButton').onclick = async () => 
+    {
+      stopExisitingScan();
+      try
+      {
+        const NDEF = new NDEFReader();
+        const resetData = [
+          {
+            recordType: "text",
+            data: FixedSizeformat("Hello from Web NFC!"),
+            id: "STRING1"
+          }
+        ];
+
+        log("ready to reset.");
+        await NDEF.scan({signal: nfcController.signal}); //scan uses the signal instead of write
+
+        NDEF.onreading = async () =>
+        {
+          try
+          {
+            await NDEF.write({ records: resetData });
+            log("Tag has been reset!");
+            nfcController.abort();
+          }catch (e)
+          {
+            log("Write Error: " + e); 
+          };
+        }
+      } catch (error)
+      {
+        log("Reset Error: " + error);
+      }
+    };
 
     document.getElementById('writeMenuButton').onclick = () => //function requires for the topdown menu to workm properly
     {
@@ -115,128 +291,6 @@
       }
     };
 
-
-
-    // Writing Function, responsible for modifying data inside the tag
-    // Current version - v3: overwrite specific data type
-    // v4 plan: allow user to overwrite data (String) using webnfc interface instead of static code
-    async function NFCWrite(mode)
-    {
-      stopExisitingScan();
-      const targetID = document.getElementById('targetID').value;
-      const customText = document.getElementById('userInput').value;
-
-      const select = document.getElementById('presetList');
-      const pattern = select.value; //microbit 25 bit length on LED on or off
-      const label = select.options[select.selectedIndex].text; //name of preset file
-
-      try 
-      {
-        const NDEF = new NDEFReader(); // instance of nedf to record exisitn data
-        log (`Mode: ${mode}, Ready to write.`);
-        await NDEF.scan({signal: nfcController.signal});
-
-        NDEF.onreading = async ({message}) => //only message matters, async for full read complete
-        {
-          try
-          {
-            let records = message.records.map(record => (
-            {
-              recordType: record.recordType,
-              data: record.data,
-              id: record.id, //important! can be used for v3 and 4 later on
-            }));
-
-            const nextNum = records.length + 1;
-
-            switch (mode)
-            {
-              case "append":
-                records.push(
-                {
-                  recordType: "text",
-                  data: FixedSizeformat(customText || "WebNFC write" + nextNum), //either user input string for writex as data string
-                  id: "STRING" + nextNum
-                }); //get data onto last block like stack
-                break;
-
-              case "preset": //the write logic on micrbit LED data
-                records.push(
-                  {
-                    recordType: "text",
-                    data: FixedSizeformat(pattern),
-                    id: "IMG" + nextNum
-                  }
-                );
-                log(`Adding Preset LED: ${label}`);
-                break;
-              
-              case "overwrite":
-                let found = false; //make sure the targetIID on the input can actually be found in the tag
-                records = records.map(r =>
-                {
-                  if (r.id === targetID)
-                  {
-                    found = true;
-                    return {
-                      recordType: "text",
-                      data: FixedSizeformat(customText || "Overwritten Data"), //overwrites a custom string of default to "xx"
-                      id: targetID
-                    };
-                  }
-                  return r;
-                });
-                if (!found) log("ID not found, adding new instead");
-                break;
-            }
-
-            await NDEF.write({ records: records}); //update data block
-            log(`Successfully write new data: now tag has ${records.length} records.`)
-            nfcController.abort(); //stops the code from looping and adding new data block and update it
-          }
-          catch (writeError)
-          {
-            log("Update error: " + writeError);
-          }
-        };
-      } catch (error) 
-      {
-        log("Write Error: " + error);
-      }
-    };
-
-    document.getElementById('appendButton').onclick = () => NFCWrite("append");
-    document.getElementById('overwriteButton').onclick = () => NFCWrite("overwrite");
-    document.getElementById('writePresetButton').onclick = () => NFCWrite("preset");
-  
-
-    //Reset Funciton: to reset to a specific states for the card
-    // Current version - v1: reset to factory (?) states for the card
-    // v2: 
-    document.getElementById('resetButton').onclick = async () => 
-    {
-      stopExisitingScan();
-      try
-      {
-        const NDEF = new NDEFReader();
-        const resetData = [
-          {
-            recordType: "text",
-            data: FixedSizeformat("Hello from Web NFC!"),
-            id: "STRING1"
-          }
-        ];
-
-        log("ready to reset.");
-        await NDEF.write({ records: resetData }, {signal: nfcController.signal});
-        log("Tag has been reset!");
-        nfcController.abort();
-      }
-      catch (error)
-      {
-        log("Reset Error: " + error);
-      }
-    };
   </script>
 </body>
 </html>
