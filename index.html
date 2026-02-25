@@ -110,6 +110,41 @@
     return text.padEnd(FIXED_BLOCK_SIZE, " "); 
     }
 
+    async function performWipe(reader) 
+    {
+      let n = 9;
+      while (n > 0)
+      {
+        try
+        {
+          const wipeContent = "CLEAN".padEnd(Math.pow(2,n), " ");
+          await reader.write(
+          {
+            records: [
+            {
+              recordType: "text",
+              data: wipeContent,
+              id: "STRING1"
+            }]
+          });
+          log(`Successfully wiped ${2^n} bytes.`);
+          return true;
+        }catch (e)
+        {
+          n--;
+          if (e.name === "QuotaExceededError") //too large == quotaerror
+          {
+            log(`${2^n} bytes is too large for this tag.`);
+          }else //not size error, need to know why
+          {
+            throw e;
+          }
+        }
+      }
+      log (`error on reseting the NFC tag`);
+      nfcController.abort();
+    }
+
     // Writing Function, responsible for modifying data inside the tag
     // Current version - v3: overwrite specific data type
     // v4 plan: allow user to overwrite data (String) using webnfc interface instead of static code
@@ -220,13 +255,6 @@
       try
       {
         const NDEF = new NDEFReader();
-        const resetData = [
-          {
-            recordType: "text",
-            data: FixedSizeformat("Hello from Web NFC!"),
-            id: "STRING1"
-          }
-        ];
 
         log("ready to reset.");
         await NDEF.scan({signal: nfcController.signal}); //scan uses the signal instead of write
@@ -235,7 +263,7 @@
         {
           try
           {
-            await NDEF.write({ records: resetData });
+            await performWipe(NDEF)
             log("Tag has been reset!");
             nfcController.abort();
           }catch (e)
