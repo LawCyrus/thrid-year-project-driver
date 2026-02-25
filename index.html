@@ -2,6 +2,12 @@
 <html> 
   <!--here is where the top down menu will be located at. The top down menu allows user to select what operation they are about to be, then using the r/w
   button to confirm what they are doing -->
+
+  <!-- needs it to make sure white space padding is showing properly-->
+  <style>
+    #log {white-space: pre-wrap; font-family: monospace;}
+  </style>
+  
   <div class="menu-group">
     <button id="writeMenuButton">Write Options ▾</button>
     <div id="writeSubmenu" style="display: none; border: 1px solid hsl(0, 0%, 80%); padding: 10px; margin-top: 5px; background: #f9f9f9;">
@@ -12,7 +18,12 @@
       <button id="overwriteButton">Overwrite by ID</button>
       <br><br>
       <label>ID to Target:</label>
-      <input type="text" id="targetID" value="Factory_Record">
+      <input type="text" id="targetID" value="String0">
+
+      <!-- Area for user to input their own string-->
+      <p><strong>Custom Input:</strong></p>
+      <input type="text" id="userInput" placeholder="Enter text here:" maxlength="25">
+      <br><br>
 
       <!--a microbit led preset to test the microbit LED interactions-->
       <hr><p><strong>micro:bit LED Presets:</strong></p>
@@ -34,7 +45,7 @@
   <p id="log"></p>
 
   <script>
-    const FIXED_BLOCK_SIZE = 32; //set default data size in terms of 32 bytes
+    const FIXED_BLOCK_SIZE = 25; //minusing the NDEF header, only have 25 bytes of data remaining if wanting to do 32 bytes data block
 
     const log = (msg) => document.getElementById('log').innerText += msg + '\n'; 
 
@@ -107,13 +118,13 @@
 
 
     // Writing Function, responsible for modifying data inside the tag
-    // Current version - v2: Add new data after existing data
-    //v3 plan: overwrite specific data type
+    // Current version - v3: overwrite specific data type
     // v4 plan: allow user to overwrite data (String) using webnfc interface instead of static code
     async function NFCWrite(mode)
     {
       stopExisitingScan();
       const targetID = document.getElementById('targetID').value;
+      const customText = document.getElementById('userInput').value;
 
       const select = document.getElementById('presetList');
       const pattern = select.value; //microbit 25 bit length on LED on or off
@@ -144,8 +155,8 @@
                 records.push(
                 {
                   recordType: "text",
-                  data: FixedSizeformat("WebNFC write" + nextNum), //data will always be 32 bytes
-                  id: "String" + nextNum
+                  data: FixedSizeformat(customText || "WebNFC write" + nextNum), //either user input string for writex as data string
+                  id: "STRING" + nextNum
                 }); //get data onto last block like stack
                 break;
 
@@ -169,8 +180,8 @@
                     found = true;
                     return {
                       recordType: "text",
-                      id: targetID,
-                      data: FixedSizeformat("Overwritten Data")
+                      data: FixedSizeformat(customText || "Overwritten Data"), //overwrites a custom string of default to "xx"
+                      id: targetID
                     };
                   }
                   return r;
@@ -211,8 +222,8 @@
         const resetData = [
           {
             recordType: "text",
-            data: "Hello from Web NFC!",
-            id: "String0"
+            data: FixedSizeformat("Hello from Web NFC!"),
+            id: "STRING1"
           }
         ];
 
