@@ -33,6 +33,7 @@ namespace MFRC522 {
     export let PICC_REQIDL = 0x26
     export let PICC_AUTHENT1A = 0x60
     export let PICC_AUTHENT1B = 0x61
+    let maxSector = 16
 
     let ComIrqReg = 0x04
     let DivIrqReg = 0x05
@@ -54,27 +55,30 @@ namespace MFRC522 {
     }
 
     function readFromCard ():string {
+        /*
+        Comment out this block since the main.ts in microbit is already calling request status (RequestStatus)
         let [status, Type2] = Request(PICC_REQIDL) //type2=sak, using type2
         if (status != 0) {
-            return null, null
-        }
+            serial.writeLine("failed status check")
+            return ""
+        }*/
 
         [status, uid] = AvoidColl()
 
         if (status != 0) {
-            return null, null
+            serial.writeLine("failed status check")
+            return ""
         }
 
-        let text_read = ''
+        let text_read = ""
         TagSelect(uid)
 
         //various NFC tag size 
         // set it to 5 since microbit has small RAM size
-        let maxSector = 5
-        // if (Type2 == 0x08) maxSector = 16
-        // else if (Type2 == 0x18) maxSector = 40
-        // else if (Type2 == 0x09) maxSector = 5
-        // else maxSector = 16
+        if (Type2 == 0x08) maxSector = 16
+        else if (Type2 == 0x18) maxSector = 40
+        else if (Type2 == 0x09) maxSector = 5
+        else maxSector = 16
 
         serial.writeLine("Reading the tag... Do not lose contact")
         for (let sector = 0; sector < maxSector; sector++) //only 16 sector for the testing nfc card
@@ -84,13 +88,18 @@ namespace MFRC522 {
             {
                 trailorBlock = (sector*4)+3
             }
-            // else //40 sectors
-            // {
-            //     //127 = last block of small blocks sectors, -31 for large sectors passed, +15 for small block inside a 16 clokc sector
-            //     trailorBlock = 127 + ((sector -31) * 16) + 15
-            // }
+            else //40 sectors
+            {
+                //127 = last block of small blocks sectors, -31 for large sectors passed, +15 for small block inside a 16 clokc sector
+                trailorBlock = 127 + ((sector -31) * 16) + 15
+            }
 
             status = Authent(PICC_AUTHENT1B, trailorBlock, Key, uid)
+            if (status != 0) 
+            {
+                serial.writeLine("Auth Fail, Skipping Sector " + sector) //ignore the data read if auth fails
+                continue
+            }
 
             if (status ==0)
             {
@@ -98,7 +107,9 @@ namespace MFRC522 {
                 let startBlock = (sector < 32) ? (sector *4): (128 + (sector - 32) *16)
                 for (let block = startBlock; block < trailorBlock; block++)
                 {
-                    if (block == 0) continue //ingore manufacture info
+                    if (block == 0) continue //ignore manufacture info
+
+                    //if ((block + 1) % 4 == 0) continue //skip trailer blocks
 
                     let blockData = ReadRFID(block)
                     if (blockData)
@@ -117,23 +128,6 @@ namespace MFRC522 {
                 serial.writeLine("Auth Fail at Sector: " + sector)
             }
         }
-
-        // let data:NumberFormat.UInt8LE []= []
-        // let text_read=''
-        // let block: number[] = []
-        // if (status == 0) {
-        //     for (let BlockNum of BlockAdr) {
-        //         block = ReadRFID(BlockNum)
-        //         if (block) {
-        //             data = data.concat(block)
-        //         }
-        //     }
-        //     if (data) {
-        //         for (let c of data) {
-        //         text_read=text_read.concat(String.fromCharCode(c))
-        //         }
-        //     }
-        // }
         Crypto1Stop()
         return text_read
     }
@@ -150,12 +144,12 @@ namespace MFRC522 {
         [status, Type2] = Request(PICC_REQIDL)
 
         if (status != 0) {
-            return null, null
+            return null
         }
         [status, uid] = AvoidColl()
 
         if (status != 0) {
-            return null, null
+            return null
         }
 
         let id=getIDNum(uid)
@@ -233,6 +227,13 @@ namespace MFRC522 {
         if (~(temp & 0x03)) {
             SetBits(TxControlReg, 0x03)
         }
+    }
+
+    //a simplified version of request, aim to solve microbit error 984 when calling it
+    export function RequestStatus(reqMode: number): number 
+    {
+        let [status, bits] = Request(reqMode)
+        return status
     }
 
     function AvoidColl ():[number,number[] ] {
@@ -473,6 +474,8 @@ namespace MFRC522 {
 
        // reset module
        SPI_Write(CommandReg, PCD_RESETPHASE)
+       SPI_Write(FIFOLevelReg, 0x80) //clear the registers for a clean read at each time
+       
 
        SPI_Write(0x2A, 0x8D)
        SPI_Write(0x2B, 0x3E)
