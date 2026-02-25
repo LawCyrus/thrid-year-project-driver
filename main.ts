@@ -1,135 +1,162 @@
-let rawData = ""
-let IMGMode = true
-let StringList: string[] = []
-let ImageList: string[] = []
-let currentIndex = 0
-basic.showIcon(IconNames.Yes)
-MFRC522.Init()
-
-input.onButtonPressed(Button.AB, function () {
-    IMGMode = !IMGMode //to switch between true and false
-
-    if (IMGMode) //visual feedback
-    {
-        basic.showString("I")
-    }else
-    {
-        basic.showString("S")
-    }
-})
-
-input.onButtonPressed(Button.B, function()
-{
-    //iterate to next available datablock of same type
-    if (StringList.length > 0)
-    {
-        currentIndex += 1
-
-        //wrap around if over the last item
-        if (currentIndex >= StringList.length)
-        {
-            currentIndex = 0
-        }
-        //Display the selected StringList
-        displaystring(StringList[currentIndex])
-        serial.writeLine("Record: (" + StringList[0] + ") (text) (String " + currentIndex + "")
-    }else
-    {
-        basic.showIcon(IconNames.No)
-    }
-})
-
-function displayPattern(payload: string)
+function displayPattern (payload: string) 
 {
     basic.clearScreen()
-
-    for (let i = 0; i < 25; i++)
+    for (let i = 0; i <= 24; i++) 
     {
-        if (payload.charAt(i) == "1")
+        if (payload.charAt(i) == "1") 
         {
-            let x = i% 5
+            let x = i % 5
             let y = Math.idiv(i, 5)
             led.plot(x, y)
         }
     }
 }
-
-function displaystring(payload: string)
+function displaystring (payload: string) 
 {
     basic.clearScreen()
-
     basic.showString(payload, 100)
 }
+// visual image to tell user the NFC card is reading
+function loadingdata () 
+{
+    let delay = 200
+    led.plot(2, 1)
+    basic.pause(delay)
+    led.plot(3, 2)
+    basic.pause(delay)
+    led.plot(2, 3)
+    basic.pause(delay)
+    led.plot(1, 2)
+    basic.pause(delay)
+    led.unplot(2, 1)
+    led.unplot(3, 2)
+    led.unplot(2, 3)
+    led.unplot(1, 2)
+}
+input.onButtonPressed(Button.AB, function () 
+{
+    // to switch between true and false
+    IMGMode = !(IMGMode)
+    // visual feedback
+    if (IMGMode) 
+    {
+        basic.showString("I")
+    } else 
+    {
+        basic.showString("S")
+    }
+})
+input.onButtonPressed(Button.B, function () 
+{
+    let activeList = IMGMode ? ImageList : StringList
+    if (activeList.length > 0) 
+    {
+        currentIndex += 1
+        // wrap around if over the last item
+        if (currentIndex >= activeList.length) 
+        {
+            currentIndex = 0
+        }
+
+        // Display data based on the current mode
+        if (IMGMode) 
+        {
+            displayPattern(activeList[currentIndex])
+        } else 
+        {
+            displaystring(activeList[currentIndex])
+        }
+        serial.writeLine("Switching to index: " + currentIndex)
+    } 
+    else 
+    {
+        basic.showIcon(IconNames.No)
+    }
+})
+let currentIndex = 0
+let IMGMode = true
+let ImageList: string[] = []
+let StringList: string[] = []
+let rawData = ""
+MFRC522.Init()
+basic.showIcon(IconNames.SmallDiamond)
 
 basic.forever(function () 
 {
-    // let result = MFRC522.Request(MFRC522.PICC_REQIDL)
-    // let status = result[0]
-    // if (status == 0)
-    // {
+    
+    if (MFRC522.RequestStatus(0x26) == 0) 
+    {
+        rawData=""
         rawData = MFRC522.read()
         serial.writeLine(rawData)
         if (rawData.length > 0) 
         {
-            if (IMGMode)
+            loadingdata()
+            // resets the stored data on micrbit to the newest NFC tag
+            StringList = []
+            ImageList = []
+            currentIndex = 0
+            let imagePosition = 0
+            let stringPosition =0 
+            
+            serial.writeLine("Current string position is " + stringPosition)
+            while (rawData.indexOf("IMG", imagePosition) != -1) 
             {
-                let IndexIMG = rawData.indexOf("IMG")
-                if (IndexIMG != -1) 
+                // the datablock of image
+                let found = rawData.indexOf("IMG", imagePosition)
+                if (found != -1) 
                 {
-                    let endOfId = rawData.indexOf("en", IndexIMG)
-                    let id = rawData.substr(IndexIMG, (endOfId - IndexIMG))
-                    // load data payload
-                    let dataStart = endOfId + 2 // +2 to skip over "en"
-                    let dataPayload = rawData.substr(dataStart, 25)
-                    // Output: Record: (data) (recordType) (id)
-                    serial.writeLine("Record: (" + dataPayload + ") (text) (" + id + ")")
-
-                    displayPattern(dataPayload)
-
-                    serial.writeLine("IMG ID: " + id)
-                    // basic.showIcon(IconNames.Happy)
+                    let marker = rawData.indexOf("en", found)
+                    if (marker != -1) 
+                    {
+                        serial.writeLine("found an IMG datablock")
+                        let dataStart = marker + 2
+                        ImageList.push(rawData.substr(dataStart, 25))
+                        // end of datebyte, continue searching for image type
+                        imagePosition = dataStart + 25
+                    } else {
+                        imagePosition = found + 3 //move past "IMG"
+                    }
                 }
+
             }
-            else
+            while (rawData.indexOf("STRING", stringPosition) != -1)
             {
-                // if there are any STRING type data
-                if (rawData.indexOf("STRING") != -1)
+                let found2 = rawData.indexOf("STRING", stringPosition)
+                let marker2 = rawData.indexOf("en", found2)
+
+                if (marker2 != -1)
                 {
-                    StringList = []
-                    currentIndex = 0
-
-                    let searchPosition = 0
-                    while (rawData.indexOf("en", searchPosition) != -1)
-                    {
-                        let start = rawData.indexOf("en", searchPosition) //start of data
-                        let nextBlock = rawData.indexOf("STRING", start) //find next string datablock         
-                        let dataPayload = ""
-
-                        //since a data block is fixed to 25 bytes on webNFC, set it to 25 byte length
-                        dataPayload = rawData.substr(start +2 , 25)
-
-                        StringList.push(dataPayload)
-                        searchPosition = start + 25
-                    }
-                    
-                    // Output: Record: (data) (recordType) (id)
-                    // 
-                    if (StringList.length > 0)
-                    {
-                        displaystring(StringList[0])
-                        serial.writeLine("Record: (" + StringList[0] + ") (text)")
-                    }
+                    let dataStart = marker2 + 2
+                    StringList.push(rawData.substr(dataStart, 25))
+                    stringPosition = dataStart + 25
+                }else
+                {
+                    stringPosition = found2 + 6
                 }
+
+            }
+            // if in imagemode, display first image data
+            // if not imagemode, display strings
+            // if have data in other mode, auto switch
+            if (IMGMode && ImageList.length > 0) 
+            {
+                displayPattern(ImageList[0])
+            } else if (!(IMGMode) && StringList.length > 0) 
+            {
+                displaystring(StringList[0])
+                serial.writeLine("Displayed String 0")
+            } else if (ImageList.length > 0)
+            {
+                IMGMode = !IMGMode
+                displayPattern(ImageList[0])
+            } else if (StringList.length > 0)
+            {
+                IMGMode = !IMGMode
+                displayPattern(StringList[0])
             }
         }
         rawData = ""
-    // }
-    // else 
-    // {
-    //     // If it's a tag but not your specific format
-    //     basic.showIcon(IconNames.SmallDiamond)
-    // }
-
-    basic.pause(3000)
-    
+    }
+    basic.pause(500)
 })
