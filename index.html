@@ -1,14 +1,144 @@
 <!DOCTYPE html>
-<html> 
-  <!--here is where the top down menu will be located at. The top down menu allows user to select what operation they are about to be, then using the r/w
-  button to confirm what they are doing -->
-
-  <!-- needs it to make sure white space padding is showing properly-->
+<html>
+  <!-- This is a webpage for simple NFC interactions, including read, write, and resetting a NFC tag-->
+<head>
+  <!-- A seperate CSS section to custoimize the UI of each buttons and the webpage layout-->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <!--make sure webpage can actually fit in different screen size-->
+  <title>Web NFC editor</title>
   <style>
-    #log {white-space: pre-wrap; font-family: monospace;}
+    :root /* Reusable global variables for consistent UI design */
+    {
+      --bg: #f4f6fc;
+      --surface: #ffffff;
+      --text: #1e2740;
+      --logtext: #5b6b86;
+      --primary: #2b56a1;
+      --accent: #f4a261;
+      --border: #d6dfee;
+    }
+
+    * 
+    {
+      box-sizing: border-box; /* make sures the height/width includes padding and border px */
+    }
+
+    body /* Overall page UI setting */
+    {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: sans-serif, Roboto, Arial;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 24px 12px;
+    }
+
+    .container /* set max width for container and make it center aligned*/
+    {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .menu-group,
+    .controls /*UI setting for button groups and top down menu */
+    {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(20, 34, 55, 0.08); /*added shadow to container to stop the buttons blending in the webpage*/
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    h1 /* title Ui setting, make title more responisve to various screen size using clamp() */
+    {
+      margin: 0 0 14px;
+      font-size: clamp(1.5rem, 5vw, 3rem);
+      font-weight: 900;
+    }
+
+    button,select,input /* consistent font across buttons, inputs, and select mode*/
+    {
+      font: inherit;
+    }
+
+    button /*UI setting for the individual buttons*/
+    {
+      background: var(--primary);
+      color: #fff;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 0.55rem 0.95rem;
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease;
+      margin: 0 0.35rem 0.35rem 0;
+    }
+
+    button:hover /* change the button UI to the following setting when mouse hover over the butotn*/
+    {
+      transform: translateY(-1px);
+      background: #1f4f8a;
+    }
+
+    #log /* log section UI setting*/
+    {
+      white-space: pre-wrap;
+      font-family: ui-monospace, monospace;
+      color: var(--logtext);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 92px;
+      background: #fdfdff;
+      margin-top: 10px;
+    }
+
+    #ledGrid 
+    {
+      display: grid;
+      grid-template-columns: repeat(5, 30px);
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    #ledGrid > div 
+    {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+
+    label,
+    p,
+    select,
+    input 
+    {
+      display: block;
+      margin-bottom: 8px;
+    }
   </style>
-  
-  <div class="menu-group">
+</head>
+<body>
+  <div class="container">
+    <!--here is where the top down menu will be located at. The top down menu allows user to select what operation they are about to be, then using the r/w
+    button to confirm what they are doing -->
+
+    <!-- needs it to make sure white space padding is showing properly-->
+    <h1>Web NFC editor</h1>
+    <div class="controls">
+      <button id="scanButton">Scan Card</button>
+      <button id="writeButton">Write Card</button>
+      <button id="resetButton">Reset Card</button>
+    </div>
+
+    <div class="menu-group">
     <button id="writeMenuButton">Write Options ▾</button>
     <div id="writeSubmenu" style="display: none; border: 1px solid hsl(0, 0%, 80%); padding: 10px; margin-top: 5px; background: #f9f9f9;">
 
@@ -17,8 +147,10 @@
       <button id="appendButton">Add New Record</button>
       <button id="overwriteButton">Overwrite by ID</button>
       <br><br>
-      <label>ID to Target:</label>
-      <input type="text" id="targetID" value="String1">
+      <div id="idTargetSection" style="display: none;">
+        <label>ID to Target:</label>
+        <input type="text" id="targetID" value="String1">
+      </div>
 
       <!-- Area for user to input their own string-->
       <p><strong>Custom Input:</strong></p>
@@ -41,17 +173,15 @@
       </select>
       <button id="writePresetButton">Preset Append</button>
     </div>
-    <button id="readMenuButton">Read Options ▾</button>
-    <button id="resetMenuButton">Reset Options ▾</button>
+    <!-- <button id="readMenuButton">Read Options ▾</button>
+    <button id="resetMenuButton">Reset Options ▾</button> -->
+    <!-- The read and reset options are not implemented yet, but the buttons are there for future development. -->
   </div>
-<body>
-  <h1>Web NFC Demo</h1>
-  <button id="scanButton">Scan Card</button> 
-  <button id="writeButton">Write Card</button>
-  <button id="resetButton">Reset Card</button>
-  <p id="log"></p>
+    <p id="log"></p>
+  </div>
+</body>
 
-  <script>
+<script>
     const FIXED_BLOCK_SIZE = 25; //minusing the NDEF header, only have 25 bytes of data remaining if wanting to do 32 bytes data block
     let nfcController = null; //global controller to ensure only 1 function is running at the same time
 
@@ -235,9 +365,17 @@
         log("Write Error: " + error);
       }
     };
-
-    document.getElementById('appendButton').onclick = () => NFCWrite("append");
-    document.getElementById('overwriteButton').onclick = () => NFCWrite("overwrite");
+    <!-- event listener to enable/disable ID target section -->
+    document.getElementById('appendButton').onclick = () => 
+    {
+      document.getElementById('idTargetSection').style.display = 'none';
+      NFCWrite("append");
+    };
+    document.getElementById('overwriteButton').onclick = () => 
+    {
+      document.getElementById('idTargetSection').style.display = 'block';
+      NFCWrite("overwrite");
+    };
     document.getElementById('writePresetButton').onclick = () => NFCWrite("LED");
 
     document.getElementById('writeCustomLED').onclick = () =>
