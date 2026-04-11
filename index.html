@@ -149,7 +149,7 @@
       <br><br>
       <div id="idTargetSection" style="display: none;">
         <label>ID to Target:</label>
-        <input type="text" id="targetID" value="String1">
+        <input type="text" id="targetID" value="STRING1">
       </div>
 
       <!-- Area for user to input their own string-->
@@ -240,6 +240,7 @@
     return text.padEnd(FIXED_BLOCK_SIZE, " "); 
     }
 
+    // clearing the NFc tag by overwriting the data with empty space
     async function performWipe(reader) 
     {
       let n = 9;
@@ -257,14 +258,14 @@
               id: "STRING1"
             }]
           });
-          log(`Successfully wiped ${2^n} bytes.`);
+          log(`Successfully wiped ${2**n} bytes.`);
           return true;
         }catch (e)
         {
           n--;
           if (e.name === "QuotaExceededError") //too large == quotaerror
           {
-            log(`${2^n} bytes is too large for this tag.`);
+            log(`${2**n} bytes is too large for this tag.`);
           }else //not size error, need to know why
           {
             throw e;
@@ -276,8 +277,7 @@
     }
 
     // Writing Function, responsible for modifying data inside the tag
-    // Current version - v3: overwrite specific data type
-    // v4 plan: allow user to overwrite data (String) using webnfc interface instead of static code
+    // Current version - v4 plan: allow user to overwrite data (String) using webnfc interface instead of static code
     async function NFCWrite(mode, customPattern = null) //customPattern = null to make the custompattern parameter optional
     {
       stopExisitingScan();
