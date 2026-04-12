@@ -3,7 +3,7 @@
   */
 //% color="#275C6B" weight=100 icon="\uf2bb" block="MFRC522 RFID"
 namespace MFRC522 {
-    let Type2=0
+    let Type2 = 0
     const BlockAdr: number[] = [8, 9, 10]
     let TPrescalerReg = 0x2B
     let TxControlReg = 0x14
@@ -15,14 +15,14 @@ namespace MFRC522 {
     let uid: number[] = []
 
     let returnLen = 0
-    let returnData:number[] = []
+    let returnData: number[] = []
     let status = 0
     let u = 0
     let ChkSerNum = 0
-    let returnBits:any = null
-    let recvData : number[]= []
+    let returnBits: any = null
+    let recvData: number[] = []
     let PCD_IDLE = 0
-    let d=0
+    let d = 0
 
     let Status2Reg = 0x08
     let CommandReg = 0x01
@@ -42,19 +42,42 @@ namespace MFRC522 {
     let ControlReg = 0x0C
     let Key = [255, 255, 255, 255, 255, 255]
 
-    function SetBits (reg: number, mask: number) {
+    function SetBits(reg: number, mask: number) {
         let tmp = SPI_Read(reg)
-        SPI_Write(reg, (tmp|mask))
+        SPI_Write(reg, (tmp | mask))
     }
 
-    function SPI_Write (adr: number, val: number) {
+    function SPI_Write(adr: number, val: number) {
         pins.digitalWritePin(DigitalPin.P16, 0)
         pins.spiWrite((adr << 1) & 0x7E)
         pins.spiWrite(val)
         pins.digitalWritePin(DigitalPin.P16, 1)
     }
 
-    function readFromCard ():string {
+    // this trims the NDEF data of the NFC tag (not physcial memory of tag)
+    function getNdefText(rawBytes: number[]): string 
+    {
+        let out = ""
+        for (let i = 0; i < rawBytes.length; i++) 
+        {
+            let byte = rawBytes[i]
+
+            if (byte >= 32 && byte <= 126) //ASCII
+            {
+                out += String.fromCharCode(byte)
+            } else if (byte == 10 || byte == 13) 
+            {
+                out += "\n"
+            }else
+            {
+                out+= "_"
+            }
+        }
+
+        return out
+    }
+
+    function readFromCard(): string {
         /*
         Comment out this block since the main.ts in microbit is already calling request status (RequestStatus)
         let [status, Type2] = Request(PICC_REQIDL) //type2=sak, using type2
@@ -71,76 +94,83 @@ namespace MFRC522 {
         }
 
         let text_read = ""
+
         TagSelect(uid)
 
+        let rawBytes: number[] = []
+
+        /* Keeping the code conservative for now, setting the sector fixed to 16 for quicker data parsing speed
         //various NFC tag size 
         // set it to 5 since microbit has small RAM size
         if (Type2 == 0x08) maxSector = 16
         else if (Type2 == 0x18) maxSector = 40
         else if (Type2 == 0x09) maxSector = 5
         else maxSector = 16
+        */
+
+        maxSector = 16
 
         serial.writeLine("Reading the tag... Do not lose contact")
+
         for (let sector = 0; sector < maxSector; sector++) //only 16 sector for the testing nfc card
         {
-            let trailorBlock = 0
+            let trailerBlock = (sector < 32) ? (sector * 4) + 3 : 127 + ((sector - 31) * 16) + 15
+
+            /*Same reason as above, fixed the trailerBlock for now
             if (sector < 32) //5,16 sector
             {
-                trailorBlock = (sector*4)+3
+                trailorBlock = (sector * 4) + 3
             }
             else //40 sectors
             {
                 //127 = last block of small blocks sectors, -31 for large sectors passed, +15 for small block inside a 16 clokc sector
-                trailorBlock = 127 + ((sector -31) * 16) + 15
+                trailorBlock = 127 + ((sector - 31) * 16) + 15
             }
-
-            status = Authent(PICC_AUTHENT1B, trailorBlock, Key, uid)
-            if (status != 0) 
-            {
+            */
+            status = Authent(PICC_AUTHENT1B, trailerBlock, Key, uid)
+            if (status != 0) {
                 serial.writeLine("Auth Fail, Skipping Sector " + sector) //ignore the data read if auth fails
                 continue
             }
+            //first 32 sector will be 4 blocks, afterwards it's 16 blocks
+            let startBlock = (sector < 32) ? (sector * 4) : (128 + (sector - 32) * 16)
 
-            if (status ==0)
+            if (status == 0) 
             {
-                //first 32 sector will be 4 blocks, afterwards it's 16 blocks
-                let startBlock = (sector < 32) ? (sector *4): (128 + (sector - 32) *16)
-                for (let block = startBlock; block < trailorBlock; block++)
+                for (let block = startBlock; block < trailerBlock; block++) 
                 {
                     if (block == 0) continue //ignore manufacture info
 
-                    //if ((block + 1) % 4 == 0) continue //skip trailer blocks
-
                     let blockData = ReadRFID(block)
-                    if (blockData)
-                    {
-                        for (let byte of blockData)
-                        {
-                            if (byte >= 32 && byte <= 126)
-                            {
+                    if (blockData) {
+                        for (let byte of blockData) {
+                            rawBytes.push(byte)
+                            /*
+                            if (byte >= 32 && byte <= 126) {
                                 text_read += String.fromCharCode(byte)
                             }
+                            */
                         }
                     }
                 }
-            }else
-            {
-                serial.writeLine("Auth Fail at Sector: " + sector)
             }
         }
         Crypto1Stop()
-        return text_read
+
+        return getNdefText(rawBytes)
+
     }
 
-    function SPI_Read (adr: number) {
+
+    function SPI_Read(adr: number) {
         pins.digitalWritePin(DigitalPin.P16, 0)
-        pins.spiWrite(((adr<<1)& 0x7E)|0x80)
+        pins.spiWrite(((adr << 1) & 0x7E) | 0x80)
         val = pins.spiWrite(0)
         pins.digitalWritePin(DigitalPin.P16, 1)
         return val
     }
 
-    function writeToCard (txt: string): number {
+    function writeToCard(txt: string): number {
         [status, Type2] = Request(PICC_REQIDL)
 
         if (status != 0) {
@@ -152,40 +182,40 @@ namespace MFRC522 {
             return null
         }
 
-        let id=getIDNum(uid)
+        let id = getIDNum(uid)
         TagSelect(uid)
-        status=Authent(PICC_AUTHENT1B, 11, Key, uid)
+        status = Authent(PICC_AUTHENT1B, 11, Key, uid)
         ReadRFID(11)
 
         if (status == 0) {
-            let data:NumberFormat.UInt8LE []= []
-            for (let i = 0; i < txt.length; i++){
+            let data: NumberFormat.UInt8LE[] = []
+            for (let i = 0; i < txt.length; i++) {
                 data.push(txt.charCodeAt(i))
             }
 
-            for (let j = txt.length; j<48;j++){
+            for (let j = txt.length; j < 48; j++) {
                 data.push(32)
             }
 
             let b = 0
             for (let BlockNum2 of BlockAdr) {
-                WriteRFID(BlockNum2, data.slice((b*16), ((b+1)*16)))
-                b ++
+                WriteRFID(BlockNum2, data.slice((b * 16), ((b + 1) * 16)))
+                b++
             }
         }
 
-            Crypto1Stop()
-            serial.writeLine("Written to Card")
-            return id
-        }
+        Crypto1Stop()
+        serial.writeLine("Written to Card")
+        return id
+    }
 
 
-    function ReadRFID (blockAdr: number) {
+    function ReadRFID(blockAdr: number) {
         recvData = []
         recvData.push(PICC_READ)
         recvData.push(blockAdr)
-        let pOut2=[]
-        pOut2= CRC_Calculation(recvData)
+        let pOut2 = []
+        pOut2 = CRC_Calculation(recvData)
         recvData.push(pOut2[0])
         recvData.push(pOut2[1])
         let [status, returnData, returnLen] = MFRC522_ToCard(PCD_TRANSCEIVE, recvData)
@@ -202,15 +232,15 @@ namespace MFRC522 {
         }
     }
 
-    function ClearBits (reg: number, mask: number) {
+    function ClearBits(reg: number, mask: number) {
         let tmp = SPI_Read(reg)
         SPI_Write(reg, tmp & (~mask))
     }
 
 
 
-    export function Request (reqMode: number):[number, any] {
-        let Type:number[] = []
+    export function Request(reqMode: number): [number, any] {
+        let Type: number[] = []
         SPI_Write(BitFramingReg, 0x07)
         Type.push(reqMode)
         let [status, returnData, returnBits] = MFRC522_ToCard(PCD_TRANSCEIVE, Type)
@@ -222,7 +252,7 @@ namespace MFRC522 {
         return [status, returnBits]
     }
 
-    function AntennaON () {
+    function AntennaON() {
         temp = SPI_Read(TxControlReg)
         if (~(temp & 0x03)) {
             SetBits(TxControlReg, 0x03)
@@ -230,13 +260,12 @@ namespace MFRC522 {
     }
 
     //a simplified version of request, aim to solve microbit error 984 when calling it
-    export function RequestStatus(reqMode: number): number 
-    {
+    export function RequestStatus(reqMode: number): number {
         let [status, bits] = Request(reqMode)
         return status
     }
 
-    function AvoidColl ():[number,number[] ] {
+    function AvoidColl(): [number, number[]] {
         let SerNum = []
         ChkSerNum = 0
         SPI_Write(BitFramingReg, 0)
@@ -260,32 +289,32 @@ namespace MFRC522 {
         return [status, returnData]
     }
 
-    function Crypto1Stop () {
+    function Crypto1Stop() {
         ClearBits(Status2Reg, 0x08)
     }
 
 
-    function Authent (authMode: number, BlockAdr: number, Sectorkey: number[], SerNum: number[]) {
+    function Authent(authMode: number, BlockAdr: number, Sectorkey: number[], SerNum: number[]) {
         let buff: number[] = []
         buff.push(authMode)
         buff.push(BlockAdr)
-        for (let l=0; l <(Sectorkey.length);l++){
+        for (let l = 0; l < (Sectorkey.length); l++) {
             buff.push(Sectorkey[l])
         }
-        for (let m=0;m<4;m++){
+        for (let m = 0; m < 4; m++) {
             buff.push(SerNum[m])
         }
         [status, returnData, returnLen] = MFRC522_ToCard(PCD_AUTHENT, buff)
-            if (status != 0){
+        if (status != 0) {
             serial.writeLine("AUTH ERROR!")
         }
-        if ((SPI_Read(Status2Reg) & 0x08)==0){
+        if ((SPI_Read(Status2Reg) & 0x08) == 0) {
             serial.writeLine("AUTH ERROR2!")
         }
         return status
     }
 
-    function MFRC522_ToCard (command: number, sendData: number[]):[number, number[],number] {
+    function MFRC522_ToCard(command: number, sendData: number[]): [number, number[], number] {
         returnData = []
         returnLen = 0
         status = 2
@@ -294,12 +323,12 @@ namespace MFRC522 {
         let lastBits = null
         let n = 0
 
-        if (command == PCD_AUTHENT){
+        if (command == PCD_AUTHENT) {
             irqEN = 0x12
             waitIRQ = 0x10
         }
 
-        if (command == PCD_TRANSCEIVE){
+        if (command == PCD_TRANSCEIVE) {
             irqEN = 0x77
             waitIRQ = 0x30
         }
@@ -309,52 +338,52 @@ namespace MFRC522 {
         SetBits(FIFOLevelReg, 0x80)
         SPI_Write(CommandReg, PCD_IDLE)
 
-        for (let o=0;o<(sendData.length);o++){
+        for (let o = 0; o < (sendData.length); o++) {
             SPI_Write(FIFODataReg, sendData[o])
         }
         SPI_Write(CommandReg, command)
 
-        if (command == PCD_TRANSCEIVE){
+        if (command == PCD_TRANSCEIVE) {
             SetBits(BitFramingReg, 0x80)
         }
 
         let p = 2000
-        while (true){
+        while (true) {
             n = SPI_Read(ComIrqReg)
-            p --
+            p--
             if (~(p != 0 && ~(n & 0x01) && ~(n & waitIRQ))) {
                 break
             }
         }
         ClearBits(BitFramingReg, 0x80)
 
-        if (p != 0){
-            if ((SPI_Read(0x06) & 0x1B) == 0x00){
+        if (p != 0) {
+            if ((SPI_Read(0x06) & 0x1B) == 0x00) {
                 status = 0
-                    if (n & irqEN & 0x01){
+                if (n & irqEN & 0x01) {
                     status = 1
                 }
-                if (command == PCD_TRANSCEIVE){
+                if (command == PCD_TRANSCEIVE) {
                     n = SPI_Read(FIFOLevelReg)
                     lastBits = SPI_Read(ControlReg) & 0x07
-                    if (lastBits != 0){
-                        returnLen = (n -1)*8+lastBits
+                    if (lastBits != 0) {
+                        returnLen = (n - 1) * 8 + lastBits
                     }
-                    else{
+                    else {
                         returnLen = n * 8
                     }
-                    if (n == 0){
+                    if (n == 0) {
                         n = 1
                     }
-                    if (n > MAX_LEN){
+                    if (n > MAX_LEN) {
                         n = MAX_LEN
                     }
-                    for (let q=0;q<n;q++){
+                    for (let q = 0; q < n; q++) {
                         returnData.push(SPI_Read(FIFODataReg))
                     }
                 }
             }
-            else{
+            else {
                 status = 2
             }
         }
@@ -362,11 +391,11 @@ namespace MFRC522 {
         return [status, returnData, returnLen]
     }
 
-    function TagSelect (SerNum: number[]) {
+    function TagSelect(SerNum: number[]) {
         let buff: number[] = []
         buff.push(0x93)
         buff.push(0x70)
-        for (let r=0;r<5;r++){
+        for (let r = 0; r < 5; r++) {
             buff.push(SerNum[r])
         }
 
@@ -374,27 +403,27 @@ namespace MFRC522 {
         buff.push(pOut[0])
         buff.push(pOut[1])
         let [status, returnData, returnLen] = MFRC522_ToCard(PCD_TRANSCEIVE, buff)
-        if ((status == 0) && (returnLen == 0x18)){
+        if ((status == 0) && (returnLen == 0x18)) {
             return returnData[0]
         }
-        else{
+        else {
             return 0
         }
     }
 
-    function CRC_Calculation (DataIn: number[]) {
+    function CRC_Calculation(DataIn: number[]) {
         ClearBits(DivIrqReg, 0x04)
         SetBits(FIFOLevelReg, 0x80)
-        for ( let s=0;s<(DataIn.length);s++){
+        for (let s = 0; s < (DataIn.length); s++) {
             SPI_Write(FIFODataReg, DataIn[s])
         }
         SPI_Write(CommandReg, 0x03)
         let t = 0xFF
 
-        while (true){
+        while (true) {
             let v = SPI_Read(DivIrqReg)
             t--
-            if (!(t != 0 && !(v & 0x04))){
+            if (!(t != 0 && !(v & 0x04))) {
                 break
             }
         }
@@ -405,7 +434,7 @@ namespace MFRC522 {
         return DataOut
     }
 
-    function WriteRFID (blockAdr: number, writeData: number[]) {
+    function WriteRFID(blockAdr: number, writeData: number[]) {
         let buff: number[] = []
         let crc: number[] = []
 
@@ -415,34 +444,34 @@ namespace MFRC522 {
         buff.push(crc[0])
         buff.push(crc[1])
         let [status, returnData, returnLen] = MFRC522_ToCard(PCD_TRANSCEIVE, buff)
-        if ((status != 0) || (returnLen!=4) || ((returnData[0]&0x0F) != 0x0A)){
+        if ((status != 0) || (returnLen != 4) || ((returnData[0] & 0x0F) != 0x0A)) {
             status = 2
             serial.writeLine("ERROR")
         }
 
         if (status == 0) {
-            let buff2 : number []= []
-            for (let w=0;w<16;w++){
+            let buff2: number[] = []
+            for (let w = 0; w < 16; w++) {
                 buff2.push(writeData[w])
             }
             crc = CRC_Calculation(buff2)
             buff2.push(crc[0])
             buff2.push(crc[1])
             let [status, returnData, returnLen] = MFRC522_ToCard(PCD_TRANSCEIVE, buff2)
-            if ((status!=0)||(returnLen!=4)||((returnData[0]&0x0F)!=0x0A)){
+            if ((status != 0) || (returnLen != 4) || ((returnData[0] & 0x0F) != 0x0A)) {
                 serial.writeLine("Error while writing")
             }
-            else{
+            else {
                 serial.writeLine("Data written")
             }
         }
     }
 
-    function getIDNum(uid: number[]){
-        let a= 0
+    function getIDNum(uid: number[]) {
+        let a = 0
 
-        for (let e=0;e<5;e++){
-            a = a*256+uid[e]
+        for (let e = 0; e < 5; e++) {
+            a = a * 256 + uid[e]
         }
         return a
     }
@@ -467,82 +496,82 @@ namespace MFRC522 {
      */
     //% block="Initialize MFRC522 Module"
     //% weight=100
-   export function Init() {
-       pins.spiPins(DigitalPin.P15, DigitalPin.P14, DigitalPin.P13)
-       pins.spiFormat(8, 0)
-       pins.digitalWritePin(DigitalPin.P16, 1)
+    export function Init() {
+        pins.spiPins(DigitalPin.P15, DigitalPin.P14, DigitalPin.P13)
+        pins.spiFormat(8, 0)
+        pins.digitalWritePin(DigitalPin.P16, 1)
 
-       // reset module
-       SPI_Write(CommandReg, PCD_RESETPHASE)
-       SPI_Write(FIFOLevelReg, 0x80) //clear the registers for a clean read at each time
-       
+        // reset module
+        SPI_Write(CommandReg, PCD_RESETPHASE)
+        SPI_Write(FIFOLevelReg, 0x80) //clear the registers for a clean read at each time
 
-       SPI_Write(0x2A, 0x8D)
-       SPI_Write(0x2B, 0x3E)
-       SPI_Write(0x2D, 30)
-       SPI_Write(0x2E, 0)
-       SPI_Write(0x15, 0x40)
-       SPI_Write(0x11, 0x3D)
-       AntennaON()
-   }
 
-   /*
-    * Function to read ID from card
-    */
-   //% block="Read ID"
-   //% weight=95
-   export function getID() {
-       let id = readID()
-       while (!(id)) {
-           id = readID()
-           if (id!=undefined){
-               return id
-           }
-       }
-       return id
-   }
+        SPI_Write(0x2A, 0x8D)
+        SPI_Write(0x2B, 0x3E)
+        SPI_Write(0x2D, 30)
+        SPI_Write(0x2E, 0)
+        SPI_Write(0x15, 0x40)
+        SPI_Write(0x11, 0x3D)
+        AntennaON()
+    }
+
+    /*
+     * Function to read ID from card
+     */
+    //% block="Read ID"
+    //% weight=95
+    export function getID() {
+        let id = readID()
+        while (!(id)) {
+            id = readID()
+            if (id != undefined) {
+                return id
+            }
+        }
+        return id
+    }
 
     /*
      * Function to read Data from card
      */
     //% block="Read data"
     //% weight=90
-   export function read():string {
-       let text = readFromCard()
+    export function read(): string {
+        let text = readFromCard()
 
-       return text
-   }
-
-
+        return text
+    }
 
 
-   /*
-    * Function to write Data
-    */
-   //% block="Write Data %text"
-   //% text
-   //% weight=85
-  export function write (text: string) {
-      let id = writeToCard(text)
 
-      while (!id) {
-          let id = writeToCard(text)
 
-          if (id != undefined){
-              return
-          }
-      }
-      return
-  }
+    /*
+     * Function to write Data
+     */
+    //% block="Write Data %text"
+    //% text
+    //% weight=85
+    export function write(text: string) {
+        let id = writeToCard(text)
 
-  /*
-   * TUrn off antenna
-   */
-  //% block="Turn off antenna"
-  //% text
-  //% weight=80
-  export function AntennaOff () {
-      ClearBits(TxControlReg, 0x03)
-  }
+        while (!id) {
+            let id = writeToCard(text)
+
+            if (id != undefined) {
+                return
+            }
+        }
+        return
+    }
+
+    /*
+     * TUrn off antenna
+     */
+    //% block="Turn off antenna"
+    //% text
+    //% weight=80
+    export function AntennaOff() {
+        ClearBits(TxControlReg, 0x03)
+    }
 
 }
