@@ -21,7 +21,7 @@
 
     * 
     {
-      box-sizing: border-box; /* make sures the height/width includes padding and border px */
+      box-sizing: border-box; /* make sure the height/width includes padding and border px */
     }
 
     body /* Overall page UI setting */
@@ -53,7 +53,7 @@
       margin-bottom: 20px;
     }
 
-    h1 /* title Ui setting, make title more responisve to various screen size using clamp() */
+    h1 /* title Ui setting, make title more responsive to various screen size using clamp() */
     {
       margin: 0 0 14px;
       font-size: clamp(1.5rem, 5vw, 3rem);
@@ -138,9 +138,7 @@
       <button id="resetButton">Reset Card</button>
     </div>
 
-    </div>
-      <p id="log"></p>
-    </div>
+    <p id="log"></p>
 
     <div class="menu-group">
     <button id="writeMenuButton">Write Options ▾</button>
@@ -162,14 +160,16 @@
       <br><br>
 
       <!-- Area for user to add in LED image of their choice-->
-       <hr><p><strong>Custom LED Grid:</p></strong></p>
+       <hr>
+       <p><strong>Custom LED Grid:</strong></p>
        <div id="ledGrid" style="display: grid; grid-template-columns: repeat(5, 30px); gap: 5px; margin-bottom:10px;">
        </div>
        <button id="writeCustomLED">Write LED Image</button>
 
 
       <!--a microbit led preset to test the microbit LED interactions-->
-      <hr><p><strong>micro:bit LED Presets:</strong></p>
+      <hr>
+      <p><strong>micro:bit LED Presets:</strong></p>
       <select id = "presetList">
         <option value = "0101011111111110111000100">Heart</option>
         <option value="1111110001100011000111111">Square</option>
@@ -177,24 +177,26 @@
       </select>
       <button id="writePresetButton">Preset Append</button>
     </div>
+
     <!-- <button id="readMenuButton">Read Options ▾</button>
     <button id="resetMenuButton">Reset Options ▾</button> -->
     <!-- The read and reset options are not implemented yet, but the buttons are there for future development. -->
-</body>
 
 <script>
-    const FIXED_BLOCK_SIZE = 25; //minusing the NDEF header, only have 25 bytes of data remaining if wanting to do 32 bytes data block
-    let nfcController = null; //global controller to ensure only 1 function is running at the same time
+    const FIXED_BLOCK_SIZE = 25; // uniform block size for each data block, also the byte limit for user input
+    let nfcController = null; //global controller to ensure only 1 operation is running at the same time
     const textEncoder = new TextEncoder();
     const userInput = document.getElementById('userInput'); 
-    const MAX_LOG_SIZE = 10;
-    let logMessages = []; // lastest MAX_LOG_SIZE messages stored position
+    const MAX_LOG_SIZE = 10; // limit log to last 10 message to prevent log overflow
+    let logMessages = []; 
 
+    // core function to calculate the byte lenght of input string
     function byteLength(text)
     {
       return textEncoder.encode(text).length;
     }
 
+    // trim the user input to within byte limit when they paste long strings in
     function trimBytes(text, maxBytes)
     {
       let result = "";
@@ -207,7 +209,8 @@
       return result;
     }
 
-    function finishCurrentOperation()
+    // stop current NFC operation and reset the controller
+    function stopCurrentOperation()
     {
       if (nfcController)
       {
@@ -222,7 +225,8 @@
     //   document.getElementById('log').innerText = "";
     // }
 
-    function log(msg) // reusable log function replacing old single log message
+    // reusable log function replacing old single log message
+    function log(msg) 
     {
       logMessages.push(msg);
 
@@ -234,7 +238,8 @@
       document.getElementById('log').innerText = logMessages.join("\n");
     }
 
-    const gridContainer = document.getElementById('ledGrid'); //creates a 5x5 Grid UI for user to input
+    // creates a 5x5 Grid UI for user to input
+    const gridContainer = document.getElementById('ledGrid'); 
     for (let i =0; i < 25; i++)
     {
       const led = document.createElement('div');
@@ -260,55 +265,48 @@
       gridContainer.appendChild(led);
     }
 
+    // converts the current grid pattern to 25 strings of 0s and 1s
     function getGridString()
     {
       return Array.from(gridContainer.children).map(led => led.dataset.state).join('');
     }
 
-    function stopExisitingScan() //function to ensure all functions is killed before new function is running
+    //function to ensure all functions is killed before new function is running
+    function beginOperation() 
     {
-      if (nfcController) 
-      {
-        try
-        {
-          nfcController.abort();
-        }
-        catch (e)
-        {
-          //nothing
-        }
-      }
+      stopCurrentOperation();
       nfcController = new AbortController()
     }
 
-    function FixedSizeformat(text) // trim by bytes instead of character
+    // trim by bytes instead of character
+    function FixedSizeformat(text) 
     {
       const trimmed = trimBytes(text, FIXED_BLOCK_SIZE);
       return trimmed.padEnd(FIXED_BLOCK_SIZE, " ");
     }
 
+    // getting the number of the reset block id
     function getResetNumber(id)
     {
       const match = /^RESET(\d+)$/i.exec((id || "").trim());
       return match ? Number(match[1]) : null;
     }
 
+    // resets the tag by overwrite existing data with empty string
     async function resetTag()
     {
-      stopExisitingScan();
+      beginOperation();
 
       try
       {
         const ndef = new NDEFReader();
-        let handled = false;
 
         log("Ready to reset. Please tap the tag.");
         await ndef.scan({ signal: nfcController.signal });
 
+        // wait for the tag to be scanned, then overwrite all text records with empty string
         ndef.onreading = async ({ message }) =>
         {
-          if (handled) return;
-          handled = true;
           ndef.onreading = null;
 
           try
@@ -355,46 +353,40 @@
           }
           finally
           {
-            finishCurrentOperation();
+            stopCurrentOperation();
           }
         };
       }
       catch (error)
       {
         log("Reset Error: " + error);
-        finishCurrentOperation();
+        stopCurrentOperation();
       }
     }
 
-    // clearing the NFc tag by overwriting the data with empty space
 
-    // Writing Function, responsible for modifying data inside the tag
-    // Current version - v4 plan: allow user to overwrite data (String) using webnfc interface instead of static code
+    // Writing Function, responsible for writing string/ image data inside the tag
     async function NFCWrite(mode, customPattern = null) //customPattern = null to make the custompattern parameter optional
     {
-      stopExisitingScan();
-
+      beginOperation();
 
       const targetID = document.getElementById('targetID').value.trim().toUpperCase(); //prevent casing error when user input in lowercase
       const customText = trimBytes(document.getElementById('userInput').value, FIXED_BLOCK_SIZE);
 
       const select = document.getElementById('presetList');
-      // const label = select.options[select.selectedIndex].text;  //unnessary as user will input their image also, could be useful for debug
       const gridPattern = getGridString();
       const finalPattern = customPattern !== null ? customPattern : gridPattern;
 
       try 
       {
-        const NDEF = new NDEFReader(); // instance of nedf to record exisitn data
-        let handled = false;
+        const NDEF = new NDEFReader(); 
 
         log (`Mode: ${mode}, Ready to write. Please tap the tag`);
         await NDEF.scan({signal: nfcController.signal});
 
-        NDEF.onreading = async ({message}) => //only message matters, async for full read complete
+        // wait for tag to be scanned, then read existing data inside the tag and decide how to write new data based on the selected mode
+        NDEF.onreading = async ({message}) => 
         {
-          if (handled) return;
-          handled = true;
 
           try
           {
@@ -426,6 +418,7 @@
 
             const nextNum = records.length + 1;
 
+            // decide how to write new data based on the selected mode
             switch (mode)
             {
               case "append":
@@ -542,16 +535,16 @@
           }
           finally
           {
-            finishCurrentOperation();
+            stopCurrentOperation();
           }
         };
       } catch (error) 
       {
         log("Write Error: " + error);
-        finishCurrentOperation();
+        stopCurrentOperation();
       }
     };
-    <!-- event listener to enable/disable ID target section -->
+    // event listener for the write buttons, each button will trigger the same write function but with different mode, and the write function will decide how to write data based on the mode
     document.getElementById('appendButton').onclick = () => 
     {
       document.getElementById('idTargetSection').style.display = 'none';
@@ -562,7 +555,11 @@
       document.getElementById('idTargetSection').style.display = 'block';
       NFCWrite("overwrite");
     };
-    document.getElementById('writePresetButton').onclick = () => NFCWrite("LED");
+    document.getElementById('writePresetButton').onclick = () => 
+    {
+      const preset = document.getElementById('presetList').value;
+      NFCWrite("LED", preset);
+    };
 
     document.getElementById('writeCustomLED').onclick = () =>
     {
@@ -570,7 +567,7 @@
       NFCWrite("LED", userPattern);
     }
 
-    // trim user input to make sure it's only 25 bytes long
+    // check byte length of user input in real time
     userInput.addEventListener('beforeinput', (e) =>
     {
       if (!e.data || e.inputType.startsWith('delete')) return;
@@ -595,9 +592,7 @@
       }
     });
   
-    //Reset Funciton: to reset to a specific states for the card
-    // Current version - v1: reset to factory (?) states for the card
-    // v2: 
+    //Reset Funciton: Reset the tag to a specific states for the card
     document.getElementById('resetButton').onclick = resetTag;
     
 
@@ -613,31 +608,25 @@
       }
     };
 
-    // Reading Function, responsible for reading data inside the tag for user to use what data they are about to control
-    // Current version - v1: Read all data on NFC chip
-    //v2 plan: get to read certain data record
-    //v3 plan: read specific block of data as input, mode of display
+    // Reading Function, responsible for reading data inside the tag for user to use
     document.getElementById('scanButton').onclick = async () => //wait for NFC to read the file
     {
-      stopExisitingScan();
+      beginOperation();
 
       try 
       {
         const reader = new NDEFReader(); //Starts NFC hardware
-        let handled = false;
 
         await reader.scan( {signal: nfcController.signal}); //wait for permission to use NFC
         log("Scan started. Please tap the tag");
 
         reader.onreading = ({ message, serialNumber }) => //wait until NFC device(tag/ card) is scanned
         {
-          if (handled) return;
-          handled = true;
 
           reader.onreading = null; 
 
-          log(`> Serial Number: ${serialNumber}`); //ID of NFC tag
-          const decoder = new TextDecoder(); //NFC data decoder -> convert to text instead of binaries
+          log(`> Serial Number: ${serialNumber}`); 
+          const decoder = new TextDecoder(); 
           for (const record of message.records) //loop the entire NFC tag data until none
           {
             let dataText = "";
@@ -647,13 +636,13 @@
               dataText = decoder.decode(record.data);
             }else
             {
-              dataText = `[${record.recordType} data]`; //if the data is not text, display the type of data in log instead of the actual data
+              //if the data is not text, display the type of data in log instead of the actual data
+              dataText = `[${record.recordType} data]`; 
             }
 
-            log(`> Record: ${dataText.trim()} (${record.recordType}) (${record.id|| ""} )`);  //decode current record's data section, Record.date = info, record.recordtype = label of data
-            //Use ${} for better literal writing, need to use ` instead of ""
+            log(`> Record: ${dataText.trim()} (${record.recordType}) (${record.id|| ""} )`);  
           }
-          finishCurrentOperation(); 
+          stopCurrentOperation(); 
         };
       } catch (error) 
       {
