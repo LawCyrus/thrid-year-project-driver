@@ -4,14 +4,12 @@ let IMGMode = true
 let ImageList: string[] = []
 let StringList: string[] = []
 let rawData = ""
-let displayChange = false
+let buttonPressed = 0 //value checker to see if there are button pressed between two string character
 let scanArmed = false
-let displayPending = false
-let displayRequestId = 0
 let stringPosition = 0
 let imagePosition = 0
 
-// visual image to tell user the NFC card is reading
+// visual image to tell user the NFC card is successfully read 
 function loadingdata() {
     basic.clearScreen()
 
@@ -46,6 +44,7 @@ function loadingdata() {
     basic.showIcon(IconNames.Yes)
 }
 
+// function to trim multiple spaces in string where it is padded with large amount of spaces
 function cleanString(payload: string): string {
     let result = ""
     let spaceCount = 0
@@ -91,20 +90,19 @@ function cleanString(payload: string): string {
 }
 
 
-
-
+// function to display string by character, stops when detects a button is pressed based on buttonPressed
 function displayString(payload: string) {
-    let myToken = displayChange
+    let statusCheck = buttonPressed
     basic.clearScreen()
 
     for (let i = 0; i < payload.length; i++) {
-        if (myToken != displayChange) {
+        if (statusCheck != buttonPressed) {
             return
         }
 
         basic.showString(payload.charAt(i), 80)
 
-        if (myToken != displayChange) {
+        if (statusCheck != buttonPressed) {
             return
         }
     }
@@ -112,9 +110,11 @@ function displayString(payload: string) {
     basic.showIcon(IconNames.Yes)
 }
 
+// function to display pattern based on 25 bytes 0 or 1
 function displayPattern(payload: string) {
-    let myToken = displayChange
-    if (myToken != displayChange) {
+    let statusCheck = buttonPressed
+    if (statusCheck != buttonPressed) 
+    {
         return
     }
 
@@ -128,16 +128,19 @@ function displayPattern(payload: string) {
     }
 }
 
-function showCurrentItem() {
+// decidees which item and mode to display
+function DisplayMode() {
     let activeList = IMGMode ? ImageList : StringList
     let index = IMGMode ? currentImageIndex : currentStringIndex
 
-    if (activeList.length <= 0) {
+    if (activeList.length <= 0) 
+    {
         basic.showIcon(IconNames.No)
         return
     }
 
-    if (index >= activeList.length) {
+    if (index >= activeList.length) 
+    {
         index = 0
         if (IMGMode) {
             currentImageIndex = 0
@@ -146,20 +149,27 @@ function showCurrentItem() {
         }
     }
 
-    if (index < 0) {
+    if (index < 0) 
+    {
         index = activeList.length - 1
-        if (IMGMode) {
+        if (IMGMode) 
+        {
             currentImageIndex = activeList.length - 1
-        } else {
+        } else 
+        {
             currentStringIndex = activeList.length - 1
         }
     }
-
-    let myTokenLocal = displayChange
+    if (buttonPressed >20)
+    {
+        buttonPressed = 0
+    }
+    let statusCheck = buttonPressed
 
     basic.showNumber(index + 1, 100)
 
-    if (myTokenLocal != displayChange) {
+    if (statusCheck != buttonPressed) 
+    {
         return
     }
 
@@ -170,31 +180,31 @@ function showCurrentItem() {
     }
 }
 
-function scheduleDisplay() {
+// adds delay to the display when buttons are being press before continues to show the strings/ image
+function displayDelay() {
     let myRequest = 0
 
-    displayChange = !displayChange
-    displayPending = true
-    displayRequestId += 1
-    myRequest = displayRequestId
+    buttonPressed += 1
+    myRequest = buttonPressed
 
     control.inBackground(function () {
         basic.pause(400)
 
-        if (myRequest != displayRequestId) {
+        if (myRequest != buttonPressed) 
+        {
             return
         }
 
-        displayPending = false
-        showCurrentItem()
+        DisplayMode()
     })
 }
 
-
-function moveCurrentIndex(step: number) {
+// funciton to iterate through the current mode's array based on number of button rpessed
+function IterateIndex(step: number) {
     let activeList = IMGMode ? ImageList : StringList
 
-    if (activeList.length <= 0) {
+    if (activeList.length <= 0) 
+    {
         basic.showIcon(IconNames.No)
         return
     }
@@ -202,45 +212,50 @@ function moveCurrentIndex(step: number) {
     let index = IMGMode ? currentImageIndex : currentStringIndex
     index += step
 
-    if (index >= activeList.length) {
+    if (index >= activeList.length) 
+    {
         index = 0
     }
 
-    if (index < 0) {
+    if (index < 0) 
+    {
         index = activeList.length - 1
     }
 
-    if (IMGMode) {
+    if (IMGMode) 
+    {
         currentImageIndex = index
-    } else {
+    } else 
+    {
         currentStringIndex = index
     }
-    scheduleDisplay()
+    displayDelay()
 }
 
+// manual trigger requires to read NFC tag
 input.onButtonPressed(Button.A, function () {
     scanArmed = true
     basic.clearScreen()
     basic.showString("S")
 })
 
+// iterate to next element in current mode's array
 input.onButtonPressed(Button.B, function () {
-    moveCurrentIndex(1)
+    IterateIndex(1)
 })
 
+// change between image mode and string mode
 input.onButtonPressed(Button.AB, function () {
     IMGMode = !IMGMode
 
-    if (IMGMode) {
+    if (IMGMode) 
+    {
         basic.showString("I")
-    } else {
+    } else 
+    {
         basic.showString("S")
     }
-    scheduleDisplay()
-})
-
-input.onGesture(Gesture.Shake, function () {
-
+    displayDelay()
 })
 
 MFRC522.Init()
@@ -248,7 +263,7 @@ basic.showIcon(IconNames.SmallDiamond)
 
 basic.forever(function () {
 
-    if (scanArmed) //if scan enabled
+    if (scanArmed) //Only trigger after user explicitly armed the scan by pressing button A
     {
         scanArmed = false
 
@@ -258,7 +273,7 @@ basic.forever(function () {
         if (rawData.length > 0) {
             loadingdata()
             serial.writeLine(rawData)
-            // resets the stored data on micrbit to the newest NFC tag
+            // reset and re-initialise the variable for a new NFC scan, 
             StringList = []
             ImageList = []
             currentImageIndex = 0
@@ -267,12 +282,19 @@ basic.forever(function () {
             stringPosition = 0
         }
 
-        while (true) {
+        // parse the raw data into two arrays, one for string and one for image based on the marker "IDATA" "SDATA", 
+        // Use "en" marker as anchor to trim the data to 25 characters
+        while (true) 
+        {
             let found2 = rawData.indexOf("SDATA", stringPosition)
             if (found2 == -1) break
 
             let marker2 = rawData.indexOf("en", found2)
-            if (marker2 == -1 || marker2 <= found2 || marker2 - found2 > 12) {
+
+            // if there is no "en" marker / too far away from "SDATA", might be corrupted record, skip to next record instead
+            // handles rare cases where NFC tag reset doesn't work properly
+            if (marker2 == -1 || marker2 <= found2 || marker2 - found2 > 12) 
+            {
                 stringPosition = found2 + 5
                 continue
             }
@@ -282,18 +304,25 @@ basic.forever(function () {
 
             let payload = rawData.substr(dataStart, 25)
             payload = cleanString(payload)
-            if (payload.length > 0) {
+
+            // handles cases where after NFc tag reset, the record exist but there is no any string in it
+            // so it skips the payload from adding into the string list
+            if (payload.length > 0) 
+            {
                 StringList.push(payload)
             }
 
             stringPosition = dataStart + 25
         }
-        while (true) {
+
+        while (true)
+        {
             let found = rawData.indexOf("IDATA", imagePosition)
             if (found == -1) break
 
             let marker = rawData.indexOf("en", found)
-            if (marker == -1 || marker <= found || marker - found > 12) {
+            if (marker == -1 || marker <= found || marker - found > 12)
+            {
                 imagePosition = found + 5
                 continue
             }
@@ -307,19 +336,24 @@ basic.forever(function () {
 
             imagePosition = dataStart + 25
         }
+
         // if in imagemode, display first image data
         // if not imagemode, display strings
         // if have data in other mode, auto switch
-        if (IMGMode && ImageList.length > 0) {
+        if (IMGMode && ImageList.length > 0) 
+        {
             displayPattern(ImageList[0])
-        } else if (!(IMGMode) && StringList.length > 0) {
+        } else if (!(IMGMode) && StringList.length > 0) 
+        {
             displayString(StringList[0])
             serial.writeLine("Displayed String 0")
-        } else if (ImageList.length > 0) {
+        } else if (ImageList.length > 0) 
+        {
             IMGMode = true
             displayPattern(ImageList[0])
             serial.writeLine("Displayed Image 0")
-        } else if (StringList.length > 0) {
+        } else if (StringList.length > 0)
+        {
             IMGMode = false
             displayString(StringList[0])
         }
