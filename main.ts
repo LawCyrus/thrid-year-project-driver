@@ -129,7 +129,7 @@ function displayPattern(payload: string) {
 }
 
 // decidees which item and mode to display
-function DisplayMode() {
+function DisplayModeSelect() {
     let activeList = IMGMode ? ImageList : StringList
     let index = IMGMode ? currentImageIndex : currentStringIndex
 
@@ -195,7 +195,7 @@ function displayDelay() {
             return
         }
 
-        DisplayMode()
+        DisplayModeSelect()
     })
 }
 
@@ -236,7 +236,9 @@ function IterateIndex(step: number) {
 input.onButtonPressed(Button.A, function () {
     scanArmed = true
     basic.clearScreen()
-    basic.showString("S")
+    basic.showString("R")
+    basic.pause(1000)
+    basic.showIcon(IconNames.SmallDiamond)
 })
 
 // iterate to next element in current mode's array
@@ -255,6 +257,11 @@ input.onButtonPressed(Button.AB, function () {
     {
         basic.showString("S")
     }
+    displayDelay()
+})
+
+// display the current record again 
+input.onGesture(Gesture.Shake, function () {
     displayDelay()
 })
 
